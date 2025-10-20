@@ -7,9 +7,10 @@ from datetime import datetime
 # Initialize OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-class CoTAgentWithResponses:
+class ReActAgent:
     """
-    Chain-of-Thought Agent using OpenAI's new Responses API.
+    ReAct (Reasoning and Acting) Agent using OpenAI's new Responses API.
+    ReAct interleaves reasoning (Thought) with actions (Action) and observations.
     The Responses API is stateful and handles conversation management automatically.
     """
     
@@ -116,41 +117,47 @@ class CoTAgentWithResponses:
         return json.dumps({"error": "Tool not found"})
     
     def get_system_instructions(self) -> str:
-        """System instructions that encourage chain-of-thought reasoning"""
-        return """You are a helpful AI agent that uses systematic chain-of-thought reasoning.
+        """System instructions that implement the ReAct (Reasoning and Acting) pattern"""
+        return """You are a helpful AI agent that uses the ReAct (Reasoning and Acting) framework.
 
-CRITICAL: Follow this reasoning framework for EVERY request:
+CRITICAL: Follow this ReAct loop for EVERY request:
 
-1. 🤔 THINK: Break down the user's request into components
-   - What is the user asking?
-   - What information do I need?
-   - What are the key steps?
+The ReAct pattern consists of repeating cycles of:
+1. Thought: Reason about the current situation
+2. Action: Take an action using available tools
+3. Observation: Observe the result of the action
 
-2. 📋 PLAN: Determine your approach
-   - Which tools do I need?
-   - In what order should I use them?
-   - What are potential edge cases?
+REACT LOOP:
 
-3. ⚡ ACT: Execute your plan
-   - Use ONE tool at a time
-   - Wait for results before proceeding
-   - Handle errors gracefully
+**Thought**: Start by reasoning about what you need to do.
+   - What is the current state?
+   - What information do I have?
+   - What do I need to find out next?
+   - Which tool should I use?
 
-4. 🔍 REFLECT: After each tool use
-   - What did I learn?
-   - Am I making progress?
-   - Do I need to adjust my approach?
+**Action**: Take ONE specific action by calling a tool.
+   - Call only ONE tool at a time
+   - Be specific with tool arguments
+   - Wait for the observation before proceeding
 
-5. ✅ CONCLUDE: Provide final answer
-   - Summarize your findings
-   - Answer the original question clearly
-   - Show your reasoning path
+**Observation**: After receiving tool results, you will observe the outcome.
+   - What did the tool return?
+   - Does this answer the question?
+   - What should I do next?
+
+Repeat the Thought → Action → Observation cycle until you can answer the user's question.
+
+**Final Answer**: When you have enough information, provide the final answer.
+   - State your conclusion clearly
+   - Reference the observations you made
+   - Be concise and direct
 
 IMPORTANT:
-- Always explain your reasoning explicitly
-- Show your thought process before taking actions
-- Be transparent about what you're doing and why
-- When you have the final answer, state it clearly"""
+- Always start with a Thought before taking an Action
+- Use tools one at a time - don't batch multiple tool calls
+- After each tool result, think about what you learned
+- Stop when you have enough information to answer confidently
+- Be explicit about your reasoning in each Thought"""
     
     def run(self, user_query: str, store_conversation: bool = False) -> Dict[str, Any]:
         """
@@ -205,17 +212,17 @@ IMPORTANT:
                 has_tool_calls = False
                 assistant_message = ""
                 tool_calls_to_execute = []
-                
-                print("🤖 AGENT OUTPUT:")
-                
+
+                print("🤖 REACT CYCLE:")
+
                 for item in response.output:
-                    # Handle message output (thinking)
+                    # Handle message output (Thought)
                     if item.type == "message":
                         for content_item in item.content:
                             if hasattr(content_item, 'text'):
                                 text = content_item.text
                                 assistant_message += text
-                                print(f"\n💭 Thinking:\n{text}")
+                                print(f"\n💭 Thought:\n{text}")
 
                     # Handle function calls
                     elif item.type == "function_call":
@@ -234,25 +241,25 @@ IMPORTANT:
                     "response_id": response.id
                 }
                 
-                # Execute tool calls if any
+                # Execute tool calls if any (Action step)
                 if has_tool_calls:
                     print(f"\n{'='*70}")
-                    print(f"🔧 EXECUTING TOOLS ({len(tool_calls_to_execute)} calls)")
+                    print(f"⚡ ACTION: Executing {len(tool_calls_to_execute)} tool(s)")
                     print(f"{'='*70}")
-                    
+
                     tool_results = []
-                    
+
                     for tool_call in tool_calls_to_execute:
                         tool_name = tool_call['name']
                         tool_args = tool_call['arguments']
                         tool_id = tool_call['id']
-                        
-                        print(f"\n  📌 Tool: {tool_name}")
+
+                        print(f"\n  📌 Action: {tool_name}")
                         print(f"     Args: {json.dumps(tool_args, indent=6)}")
-                        
+
                         # Execute the tool
                         result = self.execute_tool(tool_name, tool_args)
-                        print(f"     Result: {result}")
+                        print(f"\n  👁️  Observation: {result}")
                         
                         # Store in memory
                         step["tool_calls"].append({
@@ -320,28 +327,28 @@ IMPORTANT:
         }
     
     def print_reasoning_trace(self):
-        """Pretty print the complete reasoning trace"""
+        """Pretty print the complete ReAct trace"""
         print(f"\n{'='*70}")
-        print("COMPLETE REASONING TRACE")
+        print("COMPLETE REACT TRACE")
         print(f"{'='*70}\n")
-        
+
         for step in self.memory:
-            print(f"📍 Step {step['iteration']} ({step['status']})")
+            print(f"📍 Cycle {step['iteration']} ({step['status']})")
             print(f"   Response ID: {step.get('response_id', 'N/A')}")
-            
+
             if step['thought']:
                 # Truncate long thoughts
                 thought = step['thought']
                 if len(thought) > 200:
                     thought = thought[:200] + "..."
                 print(f"   💭 Thought: {thought}")
-            
+
             if step['tool_calls']:
-                print(f"   🔧 Tools used: {len(step['tool_calls'])}")
+                print(f"   ⚡ Actions taken: {len(step['tool_calls'])}")
                 for i, tool_call in enumerate(step['tool_calls'], 1):
-                    print(f"      {i}. {tool_call['tool']}({tool_call['arguments']})")
-                    print(f"         → {tool_call['result']}")
-            
+                    print(f"      {i}. Action: {tool_call['tool']}({tool_call['arguments']})")
+                    print(f"         👁️  Observation: {tool_call['result']}")
+
             print()
     
     def reset(self):
@@ -354,20 +361,21 @@ IMPORTANT:
 # Example usage
 def main():
     print("\n" + "="*70)
-    print("CHAIN-OF-THOUGHT AGENT WITH RESPONSES API")
+    print("REACT AGENT WITH RESPONSES API")
     print("="*70)
-    
+
     # Example 1: Multi-step reasoning with calculations
     print("\n" + "="*70)
     print("EXAMPLE 1: Multi-step mathematical problem")
     print("="*70)
-    
-    agent = CoTAgentWithResponses(model="gpt-4o")
+
+    agent = ReActAgent(model="gpt-4o")
     
     result = agent.run(
         "If I have 15 apples and I buy 3 more bags with 8 apples each, "
         "then give away half of my apples, how many do I have left? "
-        "Please show your step-by-step reasoning and use the calculator tool.",
+        "Use the ReAct pattern: think about what you need to calculate, "
+        "then use the calculator tool for each step.",
         store_conversation=True  # Use server-side conversation storage
     )
     
@@ -388,12 +396,13 @@ def main():
     print("\n" + "="*70)
     print("EXAMPLE 2: Multi-tool information gathering")
     print("="*70)
-    
-    agent2 = CoTAgentWithResponses(model="gpt-4o")
-    
+
+    agent2 = ReActAgent(model="gpt-4o")
+
     result2 = agent2.run(
         "What is Python programming language? What's today's date? "
-        "Then tell me: was Python created more than 30 years ago from today?",
+        "Then tell me: was Python created more than 30 years ago from today? "
+        "Use the ReAct pattern to gather information step by step.",
         store_conversation=True
     )
     
@@ -411,11 +420,12 @@ def main():
     print("\n" + "="*70)
     print("EXAMPLE 3: Server-side conversation storage")
     print("="*70)
-    
-    agent3 = CoTAgentWithResponses(model="gpt-4o")
-    
+
+    agent3 = ReActAgent(model="gpt-4o")
+
     result3 = agent3.run(
-        "Calculate 15 + 27, then multiply the result by 3",
+        "Calculate 15 + 27, then multiply the result by 3. "
+        "Think, act, and observe at each step.",
         store_conversation=True  # Let OpenAI handle conversation state
     )
     

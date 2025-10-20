@@ -1,0 +1,354 @@
+
+======================================================================
+REACT AGENT WITH RESPONSES API
+======================================================================
+
+======================================================================
+EXAMPLE 1: Multi-step mathematical problem
+======================================================================
+
+======================================================================
+USER QUERY: If I have 15 apples and I buy 3 more bags with 8 apples each, then give away half of my apples, how many do I have left? Use the ReAct pattern: think about what you need to calculate, then use the calculator tool for each step.
+======================================================================
+
+
+======================================================================
+ITERATION 1
+======================================================================
+
+🤖 REACT CYCLE:
+
+💭 Thought:
+**Thought:**  
+I need to calculate how many apples I have after each step. First, determine how many apples I have after buying 3 bags containing 8 apples each. Then, divide the total by 2 to find out how many apples remain after giving away half.
+
+**Action:**  
+I will calculate the total number of apples after buying the additional bags. This involves adding the apples from the bags to the initial number of apples.
+
+Calling the `calculator` tool to calculate \(15 + (3 \times 8)\).
+
+======================================================================
+⚡ ACTION: Executing 1 tool(s)
+======================================================================
+
+  📌 Action: calculator
+     Args: {
+      "expression": "15 + (3 * 8)"
+}
+
+  👁️  Observation: {"success": true, "result": 39, "expression": "15 + (3 * 8)"}
+
+======================================================================
+ITERATION 2
+======================================================================
+
+🤖 REACT CYCLE:
+
+💭 Thought:
+**Observation:**  
+The total number of apples after buying the additional bags is 39.
+
+**Thought:**  
+Now, I need to determine how many apples are left after giving away half of them. This requires dividing the current total by 2.
+
+**Action:**  
+I will calculate \(39 \div 2\).
+
+Calling the `calculator` tool to calculate \(39 \div 2\).
+
+======================================================================
+⚡ ACTION: Executing 1 tool(s)
+======================================================================
+
+  📌 Action: calculator
+     Args: {
+      "expression": "39 / 2"
+}
+
+  👁️  Observation: {"success": true, "result": 19.5, "expression": "39 / 2"}
+
+======================================================================
+ITERATION 3
+======================================================================
+
+🤖 REACT CYCLE:
+
+💭 Thought:
+**Observation:**  
+After giving away half of the apples, I have 19.5 apples left.
+
+**Final Answer:**  
+You would have 19.5 apples left after buying more and giving away half.
+
+======================================================================
+✅ TASK COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: **Observation:**  
+After giving away half of the apples, I have 19.5 apples left.
+
+**Final Answer:**  
+You would have 19.5 apples left after buying more and giving away half.
+Iterations: 3
+Response ID: resp_0599ea7e72175cc10068f6608122cc81a289e0282245eb8881
+Tokens: 833 (in: 788, out: 45)
+
+======================================================================
+COMPLETE REACT TRACE
+======================================================================
+
+📍 Cycle 1 (tools_executed)
+   Response ID: resp_0599ea7e72175cc10068f660793e7081a29ad736245062083c
+   💭 Thought: **Thought:**  
+I need to calculate how many apples I have after each step. First, determine how many apples I have after buying 3 bags containing 8 apples each. Then, divide the total by 2 to find out...
+   ⚡ Actions taken: 1
+      1. Action: calculator({'expression': '15 + (3 * 8)'})
+         👁️  Observation: {"success": true, "result": 39, "expression": "15 + (3 * 8)"}
+
+📍 Cycle 2 (tools_executed)
+   Response ID: resp_0599ea7e72175cc10068f6607dc14c81a28607f7c82a04db24
+   💭 Thought: **Observation:**  
+The total number of apples after buying the additional bags is 39.
+
+**Thought:**  
+Now, I need to determine how many apples are left after giving away half of them. This requires di...
+   ⚡ Actions taken: 1
+      1. Action: calculator({'expression': '39 / 2'})
+         👁️  Observation: {"success": true, "result": 19.5, "expression": "39 / 2"}
+
+📍 Cycle 3 (completed)
+   Response ID: resp_0599ea7e72175cc10068f6608122cc81a289e0282245eb8881
+   💭 Thought: **Observation:**  
+After giving away half of the apples, I have 19.5 apples left.
+
+**Final Answer:**  
+You would have 19.5 apples left after buying more and giving away half.
+
+
+======================================================================
+EXAMPLE 2: Multi-tool information gathering
+======================================================================
+
+======================================================================
+USER QUERY: What is Python programming language? What's today's date? Then tell me: was Python created more than 30 years ago from today? Use the ReAct pattern to gather information step by step.
+======================================================================
+
+
+======================================================================
+ITERATION 1
+======================================================================
+
+🤖 REACT CYCLE:
+
+💭 Thought:
+**Thought**: I need to find out about Python programming language first and then determine the current date. Finally, I will compare these dates to see if Python was created more than 30 years ago.
+
+**Action**: I will first search for information about the Python programming language.
+
+======================================================================
+⚡ ACTION: Executing 1 tool(s)
+======================================================================
+
+  📌 Action: search_knowledge
+     Args: {
+      "query": "Python programming language"
+}
+
+  👁️  Observation: {"found": true, "topic": "python", "info": "Python is a high-level programming language created by Guido van Rossum, first released in 1991. Known for its readability and versatility."}
+
+======================================================================
+ITERATION 2
+======================================================================
+
+🤖 REACT CYCLE:
+
+💭 Thought:
+**Observation**: Python is a high-level programming language created by Guido van Rossum, first released in 1991.
+
+**Thought**: Now I need to find out today's date to calculate the difference from 1991.
+
+**Action**: I will get the current date.
+
+======================================================================
+⚡ ACTION: Executing 1 tool(s)
+======================================================================
+
+  📌 Action: get_current_date
+     Args: {}
+
+  👁️  Observation: {"date": "2025-10-20", "time": "12:17:11", "full_datetime": "2025-10-20 12:17:11", "year": 2025}
+
+======================================================================
+ITERATION 3
+======================================================================
+
+🤖 REACT CYCLE:
+
+💭 Thought:
+**Observation**: Today's date is October 20, 2025.
+
+**Thought**: I have the information needed. I should calculate whether 2025 is more than 30 years after 1991.
+
+**Action**: I'll calculate the difference between 2025 and 1991.
+
+======================================================================
+⚡ ACTION: Executing 1 tool(s)
+======================================================================
+
+  📌 Action: calculator
+     Args: {
+      "expression": "2025 - 1991"
+}
+
+  👁️  Observation: {"success": true, "result": 34, "expression": "2025 - 1991"}
+
+======================================================================
+ITERATION 4
+======================================================================
+
+🤖 REACT CYCLE:
+
+💭 Thought:
+**Observation**: The difference between 2025 and 1991 is 34 years.
+
+**Final Answer**: Python was created in 1991. Since today is October 20, 2025, Python was created 34 years ago, which is more than 30 years ago.
+
+======================================================================
+✅ TASK COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: **Observation**: The difference between 2025 and 1991 is 34 years.
+
+**Final Answer**: Python was created in 1991. Since today is October 20, 2025, Python was created 34 years ago, which is more than 30 years ago.
+Iterations: 4
+Tokens: 906
+
+======================================================================
+COMPLETE REACT TRACE
+======================================================================
+
+📍 Cycle 1 (tools_executed)
+   Response ID: resp_0941d0510915ba6a0068f660827f60819fa5264b7812fe11c3
+   💭 Thought: **Thought**: I need to find out about Python programming language first and then determine the current date. Finally, I will compare these dates to see if Python was created more than 30 years ago.
+
+*...
+   ⚡ Actions taken: 1
+      1. Action: search_knowledge({'query': 'Python programming language'})
+         👁️  Observation: {"found": true, "topic": "python", "info": "Python is a high-level programming language created by Guido van Rossum, first released in 1991. Known for its readability and versatility."}
+
+📍 Cycle 2 (tools_executed)
+   Response ID: resp_0941d0510915ba6a0068f6608543dc819facea91a05cdb22cb
+   💭 Thought: **Observation**: Python is a high-level programming language created by Guido van Rossum, first released in 1991.
+
+**Thought**: Now I need to find out today's date to calculate the difference from 199...
+   ⚡ Actions taken: 1
+      1. Action: get_current_date({})
+         👁️  Observation: {"date": "2025-10-20", "time": "12:17:11", "full_datetime": "2025-10-20 12:17:11", "year": 2025}
+
+📍 Cycle 3 (tools_executed)
+   Response ID: resp_0941d0510915ba6a0068f660879ab8819f8f898be50defce32
+   💭 Thought: **Observation**: Today's date is October 20, 2025.
+
+**Thought**: I have the information needed. I should calculate whether 2025 is more than 30 years after 1991.
+
+**Action**: I'll calculate the differ...
+   ⚡ Actions taken: 1
+      1. Action: calculator({'expression': '2025 - 1991'})
+         👁️  Observation: {"success": true, "result": 34, "expression": "2025 - 1991"}
+
+📍 Cycle 4 (completed)
+   Response ID: resp_0941d0510915ba6a0068f66089c474819fba1733e3a1746587
+   💭 Thought: **Observation**: The difference between 2025 and 1991 is 34 years.
+
+**Final Answer**: Python was created in 1991. Since today is October 20, 2025, Python was created 34 years ago, which is more than 3...
+
+
+======================================================================
+EXAMPLE 3: Server-side conversation storage
+======================================================================
+
+======================================================================
+USER QUERY: Calculate 15 + 27, then multiply the result by 3. Think, act, and observe at each step.
+======================================================================
+
+
+======================================================================
+ITERATION 1
+======================================================================
+
+🤖 REACT CYCLE:
+
+💭 Thought:
+**Thought**: I need to calculate \(15 + 27\) first to find the initial sum. Then, I will multiply the result by 3. I'll start with the addition.
+
+**Action**: Use the calculator to compute \(15 + 27\).
+
+
+
+======================================================================
+⚡ ACTION: Executing 1 tool(s)
+======================================================================
+
+  📌 Action: calculator
+     Args: {
+      "expression": "15 + 27"
+}
+
+  👁️  Observation: {"success": true, "result": 42, "expression": "15 + 27"}
+
+======================================================================
+ITERATION 2
+======================================================================
+
+🤖 REACT CYCLE:
+
+💭 Thought:
+**Observation**: The sum of \(15 + 27\) is 42.
+
+**Thought**: Now that I have the sum, which is 42, I need to multiply this result by 3 to complete the problem.
+
+**Action**: Use the calculator to compute \(42 \times 3\).
+
+======================================================================
+⚡ ACTION: Executing 1 tool(s)
+======================================================================
+
+  📌 Action: calculator
+     Args: {
+      "expression": "42 * 3"
+}
+
+  👁️  Observation: {"success": true, "result": 126, "expression": "42 * 3"}
+
+======================================================================
+ITERATION 3
+======================================================================
+
+🤖 REACT CYCLE:
+
+💭 Thought:
+**Observation**: The result of multiplying 42 by 3 is 126.
+
+**Final Answer**: The result of \(15 + 27\) multiplied by 3 is 126.
+
+======================================================================
+✅ TASK COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: **Observation**: The result of multiplying 42 by 3 is 126.
+
+**Final Answer**: The result of \(15 + 27\) multiplied by 3 is 126.
+Stored Response ID: resp_0f74fe3962fbfab10068f660906bcc8196b4394da459d3c39e
+(This response ID can be used in future conversations)
