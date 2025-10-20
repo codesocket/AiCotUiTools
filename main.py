@@ -7,16 +7,20 @@ from datetime import datetime
 # Initialize OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-class ReActAgent:
+class TreeOfThoughtAgent:
     """
-    ReAct (Reasoning and Acting) Agent using OpenAI's new Responses API.
-    ReAct interleaves reasoning (Thought) with actions (Action) and observations.
+    Tree of Thought (ToT) Agent using OpenAI's new Responses API.
+    ToT explores multiple reasoning paths simultaneously, evaluates them,
+    and selects the most promising path to continue exploration.
     The Responses API is stateful and handles conversation management automatically.
     """
-    
-    def __init__(self, model: str = "gpt-4o"):
+
+    def __init__(self, model: str = "gpt-4o", num_thoughts: int = 3, depth_limit: int = 3):
         self.model = model
+        self.num_thoughts = num_thoughts  # Number of candidate thoughts to generate
+        self.depth_limit = depth_limit    # Maximum depth of thought tree
         self.memory: List[Dict[str, Any]] = []
+        self.thought_tree: Dict[str, Any] = {}  # Store the complete thought tree
         self.conversation_history: List[Dict[str, str]] = []
         self.response_id = None  # Track previous response for conversation continuity
         
@@ -116,53 +120,179 @@ class ReActAgent:
         
         return json.dumps({"error": "Tool not found"})
     
-    def get_system_instructions(self) -> str:
-        """System instructions that implement the ReAct (Reasoning and Acting) pattern"""
-        return """You are a helpful AI agent that uses the ReAct (Reasoning and Acting) framework.
+    def get_system_instructions(self, mode: str = "generate") -> str:
+        """System instructions that implement the Tree of Thought pattern"""
+        if mode == "generate":
+            return f"""You are a helpful AI agent that uses the Tree of Thought (ToT) framework.
 
-CRITICAL: Follow this ReAct loop for EVERY request:
+CRITICAL: When asked to generate thoughts, provide {self.num_thoughts} DIFFERENT reasoning paths.
 
-The ReAct pattern consists of repeating cycles of:
-1. Thought: Reason about the current situation
-2. Action: Take an action using available tools
-3. Observation: Observe the result of the action
+Your task is to generate {self.num_thoughts} distinct candidate thoughts for solving the problem.
+Each thought should represent a different approach or next step.
 
-REACT LOOP:
+Format your response as a JSON array with {self.num_thoughts} objects, each containing:
+- "thought": A clear reasoning step or approach
+- "reasoning": Why this approach might work
+- "next_action": What tool to use next (if any)
 
-**Thought**: Start by reasoning about what you need to do.
-   - What is the current state?
-   - What information do I have?
-   - What do I need to find out next?
-   - Which tool should I use?
+Example format:
+[
+  {{
+    "thought": "First approach...",
+    "reasoning": "This works because...",
+    "next_action": "calculator"
+  }},
+  {{
+    "thought": "Second approach...",
+    "reasoning": "This is better because...",
+    "next_action": "search_knowledge"
+  }},
+  {{
+    "thought": "Third approach...",
+    "reasoning": "Alternative method...",
+    "next_action": null
+  }}
+]
 
-**Action**: Take ONE specific action by calling a tool.
-   - Call only ONE tool at a time
-   - Be specific with tool arguments
-   - Wait for the observation before proceeding
+Be creative and explore different reasoning paths."""
 
-**Observation**: After receiving tool results, you will observe the outcome.
-   - What did the tool return?
-   - Does this answer the question?
-   - What should I do next?
+        elif mode == "evaluate":
+            return """You are an AI evaluator that scores different reasoning paths.
 
-Repeat the Thought → Action → Observation cycle until you can answer the user's question.
+Your task is to evaluate the given thoughts and score each one based on:
+1. **Correctness**: Is the reasoning sound?
+2. **Efficiency**: Does it lead to the goal quickly?
+3. **Completeness**: Does it address the full problem?
 
-**Final Answer**: When you have enough information, provide the final answer.
-   - State your conclusion clearly
-   - Reference the observations you made
-   - Be concise and direct
+Rate each thought on a scale of 0-10 and provide brief justification.
 
-IMPORTANT:
-- Always start with a Thought before taking an Action
-- Use tools one at a time - don't batch multiple tool calls
-- After each tool result, think about what you learned
-- Stop when you have enough information to answer confidently
-- Be explicit about your reasoning in each Thought"""
-    
+Format your response as a JSON array:
+[
+  {
+    "thought_id": 0,
+    "score": 8.5,
+    "justification": "Strong reasoning but could be more efficient"
+  },
+  ...
+]"""
+
+        else:  # execute mode
+            return """You are a helpful AI agent executing a specific reasoning path.
+
+Follow the selected thought path and use the available tools to gather information.
+After using tools, provide your observation and determine if you can answer the question.
+
+If you have enough information, provide the final answer.
+If not, indicate what additional information is needed."""
+
+    def generate_thoughts(self, context: str) -> List[Dict[str, Any]]:
+        """Generate multiple candidate thoughts for the current state"""
+        print(f"\n🌳 GENERATING {self.num_thoughts} CANDIDATE THOUGHTS...")
+
+        prompt = f"""Current problem/context: {context}
+
+Generate {self.num_thoughts} different reasoning paths to solve this problem.
+Each path should explore a different approach or strategy."""
+
+        try:
+            response = client.responses.create(
+                model=self.model,
+                input=prompt,
+                instructions=self.get_system_instructions(mode="generate"),
+                tools=self.get_tools_config()
+            )
+
+            # Extract the response text
+            response_text = ""
+            for item in response.output:
+                if item.type == "message":
+                    for content_item in item.content:
+                        if hasattr(content_item, 'text'):
+                            response_text += content_item.text
+
+            # Try to parse JSON from response
+            # Look for JSON array in the response
+            import re
+            json_match = re.search(r'\[[\s\S]*\]', response_text)
+            if json_match:
+                thoughts = json.loads(json_match.group())
+                print(f"✅ Generated {len(thoughts)} thoughts")
+                for i, thought in enumerate(thoughts):
+                    print(f"\n  Thought {i+1}:")
+                    print(f"    - Path: {thought.get('thought', 'N/A')[:100]}...")
+                    print(f"    - Reasoning: {thought.get('reasoning', 'N/A')[:100]}...")
+                return thoughts
+            else:
+                print("⚠️ Could not parse JSON, using fallback")
+                return [{"thought": response_text, "reasoning": "Direct response", "next_action": None}]
+
+        except Exception as e:
+            print(f"❌ Error generating thoughts: {e}")
+            return [{"thought": f"Error: {e}", "reasoning": "Fallback", "next_action": None}]
+
+    def evaluate_thoughts(self, thoughts: List[Dict[str, Any]], context: str) -> List[Dict[str, Any]]:
+        """Evaluate and score the generated thoughts"""
+        print(f"\n📊 EVALUATING {len(thoughts)} THOUGHTS...")
+
+        thoughts_str = json.dumps(thoughts, indent=2)
+        prompt = f"""Problem context: {context}
+
+Candidate thoughts to evaluate:
+{thoughts_str}
+
+Evaluate each thought and provide scores."""
+
+        try:
+            response = client.responses.create(
+                model=self.model,
+                input=prompt,
+                instructions=self.get_system_instructions(mode="evaluate")
+            )
+
+            # Extract the response text
+            response_text = ""
+            for item in response.output:
+                if item.type == "message":
+                    for content_item in item.content:
+                        if hasattr(content_item, 'text'):
+                            response_text += content_item.text
+
+            # Try to parse JSON from response
+            import re
+            json_match = re.search(r'\[[\s\S]*\]', response_text)
+            if json_match:
+                evaluations = json.loads(json_match.group())
+                print(f"✅ Evaluated {len(evaluations)} thoughts")
+                for eval_item in evaluations:
+                    print(f"  Thought {eval_item.get('thought_id', 'N/A')}: Score {eval_item.get('score', 0)}/10")
+                    print(f"    Justification: {eval_item.get('justification', 'N/A')}")
+                return evaluations
+            else:
+                # Fallback: assign equal scores
+                return [{"thought_id": i, "score": 5.0, "justification": "Could not evaluate"}
+                        for i in range(len(thoughts))]
+
+        except Exception as e:
+            print(f"❌ Error evaluating thoughts: {e}")
+            return [{"thought_id": i, "score": 5.0, "justification": f"Error: {e}"}
+                    for i in range(len(thoughts))]
+
+    def select_best_thought(self, thoughts: List[Dict[str, Any]],
+                           evaluations: List[Dict[str, Any]]) -> tuple:
+        """Select the highest-scored thought"""
+        best_eval = max(evaluations, key=lambda x: x.get('score', 0))
+        best_idx = best_eval.get('thought_id', 0)
+        best_thought = thoughts[best_idx] if best_idx < len(thoughts) else thoughts[0]
+
+        print(f"\n🎯 SELECTED BEST THOUGHT (ID: {best_idx}, Score: {best_eval.get('score', 0)}/10)")
+        print(f"   Path: {best_thought.get('thought', 'N/A')[:100]}...")
+
+        return best_thought, best_eval
+
     def run(self, user_query: str, store_conversation: bool = False) -> Dict[str, Any]:
         """
-        Main agent loop using Responses API.
-        
+        Main Tree of Thought agent loop using Responses API.
+
         Args:
             user_query: The user's question or request
             store_conversation: If True, OpenAI stores conversation state server-side
@@ -170,190 +300,182 @@ IMPORTANT:
         print(f"\n{'='*70}")
         print(f"USER QUERY: {user_query}")
         print(f"{'='*70}\n")
-        
-        iteration = 0
-        max_iterations = 10
-        
-        # Prepare input - can be a simple string or list of messages
-        input_data = user_query
-        
-        # If we have previous conversation history and not using server-side storage
-        if self.conversation_history and not store_conversation:
-            input_data = self.conversation_history + [
-                {"role": "user", "content": user_query}
-            ]
-        
-        while iteration < max_iterations:
-            iteration += 1
+
+        depth = 0
+        context = user_query
+        selected_path = []
+
+        # Initialize thought tree
+        self.thought_tree = {
+            "query": user_query,
+            "depth_limit": self.depth_limit,
+            "paths": []
+        }
+
+        while depth < self.depth_limit:
+            depth += 1
             print(f"\n{'='*70}")
-            print(f"ITERATION {iteration}")
+            print(f"TREE DEPTH: {depth}/{self.depth_limit}")
             print(f"{'='*70}\n")
-            
+
             try:
-                # Create response with Responses API
-                response_params = {
-                    "model": self.model,
-                    "input": input_data,
-                    "instructions": self.get_system_instructions(),
-                    "tools": self.get_tools_config(),
-                    "store": store_conversation,  # Server-side conversation storage
+                # Step 1: Generate multiple candidate thoughts
+                thoughts = self.generate_thoughts(context)
+
+                # Step 2: Evaluate the thoughts
+                evaluations = self.evaluate_thoughts(thoughts, context)
+
+                # Step 3: Select the best thought
+                best_thought, best_eval = self.select_best_thought(thoughts, evaluations)
+
+                # Store in tree
+                tree_node = {
+                    "depth": depth,
+                    "context": context,
+                    "candidates": thoughts,
+                    "evaluations": evaluations,
+                    "selected": best_thought,
+                    "selected_score": best_eval.get('score', 0)
                 }
-                
-                # Include previous_response_id for conversation continuity only if using server-side storage
-                if store_conversation and self.response_id:
-                    response_params["previous_response_id"] = self.response_id
-                
-                response = client.responses.create(**response_params)
-                
-                # Store response ID for next iteration
-                self.response_id = response.id
-                
-                # Process output items
-                has_tool_calls = False
-                assistant_message = ""
-                tool_calls_to_execute = []
+                self.thought_tree["paths"].append(tree_node)
+                selected_path.append(best_thought)
 
-                print("🤖 REACT CYCLE:")
+                # Step 4: Execute action if needed
+                next_action = best_thought.get('next_action')
+                if next_action and next_action in ['calculator', 'search_knowledge', 'get_current_date']:
+                    print(f"\n⚡ EXECUTING ACTION: {next_action}")
 
-                for item in response.output:
-                    # Handle message output (Thought)
-                    if item.type == "message":
-                        for content_item in item.content:
-                            if hasattr(content_item, 'text'):
-                                text = content_item.text
-                                assistant_message += text
-                                print(f"\n💭 Thought:\n{text}")
+                    # Use the model to determine the arguments for the tool
+                    action_prompt = f"""Based on this reasoning path: {best_thought.get('thought')}
 
-                    # Handle function calls
-                    elif item.type == "function_call":
-                        has_tool_calls = True
-                        tool_calls_to_execute.append({
-                            'id': item.call_id,
-                            'name': item.name,
-                            'arguments': json.loads(item.arguments)
-                        })
-                
-                # Store this iteration in memory
-                step = {
-                    "iteration": iteration,
-                    "thought": assistant_message,
-                    "tool_calls": [],
-                    "response_id": response.id
-                }
-                
-                # Execute tool calls if any (Action step)
-                if has_tool_calls:
-                    print(f"\n{'='*70}")
-                    print(f"⚡ ACTION: Executing {len(tool_calls_to_execute)} tool(s)")
-                    print(f"{'='*70}")
+Execute the {next_action} tool. What arguments should be used?
+Provide your response as a JSON object with the tool arguments.
+For calculator: {{"expression": "..."}}
+For search_knowledge: {{"query": "..."}}
+For get_current_date: {{}}"""
 
-                    tool_results = []
+                    response = client.responses.create(
+                        model=self.model,
+                        input=action_prompt,
+                        instructions=self.get_system_instructions(mode="execute"),
+                        tools=self.get_tools_config()
+                    )
 
-                    for tool_call in tool_calls_to_execute:
-                        tool_name = tool_call['name']
-                        tool_args = tool_call['arguments']
-                        tool_id = tool_call['id']
+                    # Look for tool calls
+                    tool_result = None
+                    for item in response.output:
+                        if item.type == "function_call" and item.name == next_action:
+                            tool_args = json.loads(item.arguments)
+                            print(f"  Args: {json.dumps(tool_args, indent=4)}")
+                            tool_result = self.execute_tool(next_action, tool_args)
+                            print(f"  Result: {tool_result}")
+                            tree_node["action_result"] = tool_result
+                            break
 
-                        print(f"\n  📌 Action: {tool_name}")
-                        print(f"     Args: {json.dumps(tool_args, indent=6)}")
-
-                        # Execute the tool
-                        result = self.execute_tool(tool_name, tool_args)
-                        print(f"\n  👁️  Observation: {result}")
-                        
-                        # Store in memory
-                        step["tool_calls"].append({
-                            "tool": tool_name,
-                            "arguments": tool_args,
-                            "result": result
-                        })
-                        
-                        # Prepare result for next API call
-                        tool_results.append({
-                            "type": "function_call_output",
-                            "call_id": tool_id,
-                            "output": result
-                        })
-                    
-                    # Update input for next iteration with tool results
-                    # Just send tool results directly as input
-                    input_data = tool_results
-                    
-                    step["status"] = "tools_executed"
-                    self.memory.append(step)
-                    
-                    # Continue to next iteration to get model's response to tool results
-                    continue
-                
+                    # Update context with the result
+                    if tool_result:
+                        context = f"{context}\n\nPrevious step: {best_thought.get('thought')}\nAction taken: {next_action}\nResult: {tool_result}"
+                    else:
+                        context = f"{context}\n\nPrevious step: {best_thought.get('thought')}"
                 else:
-                    # No tool calls - we have the final answer
-                    step["status"] = "completed"
-                    self.memory.append(step)
-                    
-                    print(f"\n{'='*70}")
-                    print("✅ TASK COMPLETED")
-                    print(f"{'='*70}\n")
-                    
-                    # Extract final answer
-                    final_answer = assistant_message
-                    
-                    return {
-                        "answer": final_answer,
-                        "reasoning_trace": self.memory,
-                        "iterations": iteration,
-                        "response_id": response.id,
-                        "usage": {
-                            "input_tokens": response.usage.input_tokens,
-                            "output_tokens": response.usage.output_tokens,
-                            "total_tokens": response.usage.total_tokens
+                    # No action needed, might have the answer
+                    print(f"\n✅ NO ACTION NEEDED - Checking if we have the answer...")
+
+                    # Check if we have enough information to answer
+                    check_prompt = f"""Original question: {user_query}
+
+Reasoning path so far:
+{json.dumps(selected_path, indent=2)}
+
+Do you have enough information to answer the question? If yes, provide the final answer.
+If no, explain what additional information is needed."""
+
+                    response = client.responses.create(
+                        model=self.model,
+                        input=check_prompt,
+                        instructions=self.get_system_instructions(mode="execute")
+                    )
+
+                    final_answer = ""
+                    for item in response.output:
+                        if item.type == "message":
+                            for content_item in item.content:
+                                if hasattr(content_item, 'text'):
+                                    final_answer += content_item.text
+
+                    # Check if this is truly final or we need more depth
+                    if "final answer" in final_answer.lower() or depth >= self.depth_limit:
+                        print(f"\n{'='*70}")
+                        print("✅ TREE OF THOUGHT COMPLETED")
+                        print(f"{'='*70}\n")
+
+                        return {
+                            "answer": final_answer,
+                            "thought_tree": self.thought_tree,
+                            "selected_path": selected_path,
+                            "depth_reached": depth,
+                            "response_id": response.id
                         }
-                    }
-            
+                    else:
+                        context = f"{context}\n\nPrevious step: {best_thought.get('thought')}\nAnalysis: {final_answer}"
+
             except Exception as e:
-                print(f"\n❌ Error in iteration {iteration}: {str(e)}")
+                print(f"\n❌ Error at depth {depth}: {str(e)}")
                 return {
                     "answer": f"Error occurred: {str(e)}",
-                    "reasoning_trace": self.memory,
-                    "iterations": iteration,
+                    "thought_tree": self.thought_tree,
+                    "selected_path": selected_path,
+                    "depth_reached": depth,
                     "error": str(e)
                 }
-        
-        # Max iterations reached
-        print(f"\n⚠️ Max iterations ({max_iterations}) reached")
+
+        # Max depth reached
+        print(f"\n⚠️ Max depth ({self.depth_limit}) reached")
         return {
-            "answer": "Task incomplete - max iterations reached",
-            "reasoning_trace": self.memory,
-            "iterations": iteration
+            "answer": "Reached maximum tree depth",
+            "thought_tree": self.thought_tree,
+            "selected_path": selected_path,
+            "depth_reached": depth
         }
     
     def print_reasoning_trace(self):
-        """Pretty print the complete ReAct trace"""
+        """Pretty print the complete Tree of Thought trace"""
         print(f"\n{'='*70}")
-        print("COMPLETE REACT TRACE")
+        print("COMPLETE TREE OF THOUGHT TRACE")
         print(f"{'='*70}\n")
 
-        for step in self.memory:
-            print(f"📍 Cycle {step['iteration']} ({step['status']})")
-            print(f"   Response ID: {step.get('response_id', 'N/A')}")
+        if not self.thought_tree.get("paths"):
+            print("No reasoning trace available")
+            return
 
-            if step['thought']:
-                # Truncate long thoughts
-                thought = step['thought']
-                if len(thought) > 200:
-                    thought = thought[:200] + "..."
-                print(f"   💭 Thought: {thought}")
+        print(f"Original Query: {self.thought_tree.get('query', 'N/A')}")
+        print(f"Depth Limit: {self.thought_tree.get('depth_limit', 'N/A')}\n")
 
-            if step['tool_calls']:
-                print(f"   ⚡ Actions taken: {len(step['tool_calls'])}")
-                for i, tool_call in enumerate(step['tool_calls'], 1):
-                    print(f"      {i}. Action: {tool_call['tool']}({tool_call['arguments']})")
-                    print(f"         👁️  Observation: {tool_call['result']}")
+        for node in self.thought_tree["paths"]:
+            print(f"🌳 DEPTH {node['depth']}")
+            print(f"   Context: {node['context'][:100]}...")
+            print(f"\n   Generated {len(node['candidates'])} candidate thoughts:")
+
+            for i, thought in enumerate(node['candidates']):
+                eval_info = next((e for e in node['evaluations'] if e.get('thought_id') == i), {})
+                score = eval_info.get('score', 'N/A')
+                is_selected = (thought == node['selected'])
+
+                marker = "🎯" if is_selected else "  "
+                print(f"\n   {marker} Candidate {i+1} (Score: {score}/10):")
+                print(f"      Thought: {thought.get('thought', 'N/A')[:80]}...")
+                print(f"      Reasoning: {thought.get('reasoning', 'N/A')[:80]}...")
+                print(f"      Next Action: {thought.get('next_action', 'None')}")
+
+                if is_selected and 'action_result' in node:
+                    print(f"      ⚡ Executed with result: {node['action_result'][:80]}...")
 
             print()
-    
+
     def reset(self):
         """Reset conversation state"""
         self.memory = []
+        self.thought_tree = {}
         self.conversation_history = []
         self.response_id = None
 
@@ -361,80 +483,77 @@ IMPORTANT:
 # Example usage
 def main():
     print("\n" + "="*70)
-    print("REACT AGENT WITH RESPONSES API")
+    print("TREE OF THOUGHT AGENT WITH RESPONSES API")
     print("="*70)
 
     # Example 1: Multi-step reasoning with calculations
     print("\n" + "="*70)
-    print("EXAMPLE 1: Multi-step mathematical problem")
+    print("EXAMPLE 1: Multi-step mathematical problem with Tree of Thought")
     print("="*70)
 
-    agent = ReActAgent(model="gpt-4o")
-    
+    agent = TreeOfThoughtAgent(model="gpt-4o", num_thoughts=3, depth_limit=3)
+
     result = agent.run(
         "If I have 15 apples and I buy 3 more bags with 8 apples each, "
-        "then give away half of my apples, how many do I have left? "
-        "Use the ReAct pattern: think about what you need to calculate, "
-        "then use the calculator tool for each step.",
-        store_conversation=True  # Use server-side conversation storage
+        "then give away half of my apples, how many do I have left?",
+        store_conversation=True
     )
-    
+
     print(f"\n{'='*70}")
     print("📊 FINAL RESULT")
     print(f"{'='*70}")
     print(f"Answer: {result['answer']}")
-    print(f"Iterations: {result['iterations']}")
+    print(f"Depth Reached: {result.get('depth_reached', 'N/A')}")
     print(f"Response ID: {result.get('response_id', 'N/A')}")
-    if 'usage' in result:
-        print(f"Tokens: {result['usage']['total_tokens']} "
-              f"(in: {result['usage']['input_tokens']}, "
-              f"out: {result['usage']['output_tokens']})")
-    
+
     agent.print_reasoning_trace()
-    
+
     # Example 2: Information gathering with multiple tools
     print("\n" + "="*70)
-    print("EXAMPLE 2: Multi-tool information gathering")
+    print("EXAMPLE 2: Multi-tool information gathering with ToT")
     print("="*70)
 
-    agent2 = ReActAgent(model="gpt-4o")
+    agent2 = TreeOfThoughtAgent(model="gpt-4o", num_thoughts=3, depth_limit=2)
 
     result2 = agent2.run(
         "What is Python programming language? What's today's date? "
-        "Then tell me: was Python created more than 30 years ago from today? "
-        "Use the ReAct pattern to gather information step by step.",
+        "Then tell me: was Python created more than 30 years ago from today?",
         store_conversation=True
     )
-    
+
     print(f"\n{'='*70}")
     print("📊 FINAL RESULT")
     print(f"{'='*70}")
     print(f"Answer: {result2['answer']}")
-    print(f"Iterations: {result2['iterations']}")
-    if 'usage' in result2:
-        print(f"Tokens: {result2['usage']['total_tokens']}")
-    
+    print(f"Depth Reached: {result2.get('depth_reached', 'N/A')}")
+
     agent2.print_reasoning_trace()
-    
-    # Example 3: Using server-side conversation storage
+
+    # Example 3: Complex problem requiring exploration
     print("\n" + "="*70)
-    print("EXAMPLE 3: Server-side conversation storage")
+    print("EXAMPLE 3: Complex problem exploration")
     print("="*70)
 
-    agent3 = ReActAgent(model="gpt-4o")
+    agent3 = TreeOfThoughtAgent(model="gpt-4o", num_thoughts=4, depth_limit=3)
 
     result3 = agent3.run(
-        "Calculate 15 + 27, then multiply the result by 3. "
-        "Think, act, and observe at each step.",
-        store_conversation=True  # Let OpenAI handle conversation state
+        "I need to plan a data science project. What are the key steps? "
+        "Consider different approaches and select the best one.",
+        store_conversation=True
     )
-    
+
     print(f"\n{'='*70}")
     print("📊 FINAL RESULT")
     print(f"{'='*70}")
     print(f"Answer: {result3['answer']}")
+    print(f"Depth Reached: {result3.get('depth_reached', 'N/A')}")
     print(f"Stored Response ID: {result3.get('response_id')}")
-    print("(This response ID can be used in future conversations)")
+
+    # Show selected path
+    if 'selected_path' in result3:
+        print(f"\n📍 Selected reasoning path:")
+        for i, step in enumerate(result3['selected_path'], 1):
+            print(f"  {i}. {step.get('thought', 'N/A')[:60]}...")
 
 
 if __name__ == "__main__":
