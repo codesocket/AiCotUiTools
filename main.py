@@ -187,7 +187,7 @@ IMPORTANT:
                 response_params = {
                     "model": self.model,
                     "input": input_data,
-                    "instructions": ,
+                    "instructions": self.get_system_instructions(),
                     "tools": self.get_tools_config(),
                     "store": store_conversation,  # Server-side conversation storage
                 }
