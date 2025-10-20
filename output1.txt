@@ -1,0 +1,257 @@
+
+======================================================================
+CHAIN-OF-THOUGHT AGENT WITH RESPONSES API
+======================================================================
+
+======================================================================
+EXAMPLE 1: Multi-step mathematical problem
+======================================================================
+
+======================================================================
+USER QUERY: If I have 15 apples and I buy 3 more bags with 8 apples each, then give away half of my apples, how many do I have left? Please show your step-by-step reasoning and use the calculator tool.
+======================================================================
+
+
+======================================================================
+ITERATION 1
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+======================================================================
+🔧 EXECUTING TOOLS (2 calls)
+======================================================================
+
+  📌 Tool: calculator
+     Args: {
+      "expression": "15 + (3 * 8)"
+}
+     Result: {"success": true, "result": 39, "expression": "15 + (3 * 8)"}
+
+  📌 Tool: calculator
+     Args: {
+      "expression": "(15 + (3 * 8)) / 2"
+}
+     Result: {"success": true, "result": 19.5, "expression": "(15 + (3 * 8)) / 2"}
+
+======================================================================
+ITERATION 2
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+Here's the step-by-step calculation:
+
+1. **Initial Apples:**
+   - You start with 15 apples.
+
+2. **Buying More Apples:**
+   - You buy 3 bags with 8 apples each: \(3 \times 8 = 24\) apples.
+
+3. **Total Apples Before Giving Away:**
+   - Add the newly bought apples to your initial amount: \(15 + 24 = 39\) apples.
+
+4. **Giving Away Half:**
+   - You give away half of your apples: \(39 / 2 = 19.5\).
+
+So, you have 19.5 apples left. However, since you can't have half an apple in practical terms, this would mean you likely have 19 whole apples left.
+
+======================================================================
+✅ TASK COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: Here's the step-by-step calculation:
+
+1. **Initial Apples:**
+   - You start with 15 apples.
+
+2. **Buying More Apples:**
+   - You buy 3 bags with 8 apples each: \(3 \times 8 = 24\) apples.
+
+3. **Total Apples Before Giving Away:**
+   - Add the newly bought apples to your initial amount: \(15 + 24 = 39\) apples.
+
+4. **Giving Away Half:**
+   - You give away half of your apples: \(39 / 2 = 19.5\).
+
+So, you have 19.5 apples left. However, since you can't have half an apple in practical terms, this would mean you likely have 19 whole apples left.
+Iterations: 2
+Response ID: resp_0383d1432c98994c0068f3f9a54ee4819dabd2e5495612d7d3
+Tokens: 427 (in: 268, out: 159)
+
+======================================================================
+COMPLETE REASONING TRACE
+======================================================================
+
+📍 Step 1 (tools_executed)
+   Response ID: resp_0383d1432c98994c0068f3f9a43134819dbb78576edcc974d8
+   🔧 Tools used: 2
+      1. calculator({'expression': '15 + (3 * 8)'})
+         → {"success": true, "result": 39, "expression": "15 + (3 * 8)"}
+      2. calculator({'expression': '(15 + (3 * 8)) / 2'})
+         → {"success": true, "result": 19.5, "expression": "(15 + (3 * 8)) / 2"}
+
+📍 Step 2 (completed)
+   Response ID: resp_0383d1432c98994c0068f3f9a54ee4819dabd2e5495612d7d3
+   💭 Thought: Here's the step-by-step calculation:
+
+1. **Initial Apples:**
+   - You start with 15 apples.
+
+2. **Buying More Apples:**
+   - You buy 3 bags with 8 apples each: \(3 \times 8 = 24\) apples.
+
+3. **Total ...
+
+
+======================================================================
+EXAMPLE 2: Multi-tool information gathering
+======================================================================
+
+======================================================================
+USER QUERY: What is Python programming language? What's today's date? Then tell me: was Python created more than 30 years ago from today?
+======================================================================
+
+
+======================================================================
+ITERATION 1
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+======================================================================
+🔧 EXECUTING TOOLS (2 calls)
+======================================================================
+
+  📌 Tool: search_knowledge
+     Args: {
+      "query": "Python programming language overview"
+}
+     Result: {"found": true, "topic": "python", "info": "Python is a high-level programming language created by Guido van Rossum, first released in 1991. Known for its readability and versatility."}
+
+  📌 Tool: get_current_date
+     Args: {}
+     Result: {"date": "2025-10-18", "time": "16:33:45", "full_datetime": "2025-10-18 16:33:45", "year": 2025}
+
+======================================================================
+ITERATION 2
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+======================================================================
+🔧 EXECUTING TOOLS (1 calls)
+======================================================================
+
+  📌 Tool: calculator
+     Args: {
+      "expression": "2025 - 1991"
+}
+     Result: {"success": true, "result": 34, "expression": "2025 - 1991"}
+
+======================================================================
+ITERATION 3
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+Python is a high-level programming language created by Guido van Rossum, first released in 1991. It is known for its readability and versatility.
+
+Today's date is October 18, 2025. Python was created 34 years ago, so yes, it was created more than 30 years ago.
+
+======================================================================
+✅ TASK COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: Python is a high-level programming language created by Guido van Rossum, first released in 1991. It is known for its readability and versatility.
+
+Today's date is October 18, 2025. Python was created 34 years ago, so yes, it was created more than 30 years ago.
+Iterations: 3
+Tokens: 383
+
+======================================================================
+COMPLETE REASONING TRACE
+======================================================================
+
+📍 Step 1 (tools_executed)
+   Response ID: resp_0972412dc1ebb78c0068f3f9a85ee481a18c7b5fffc8c8a7e4
+   🔧 Tools used: 2
+      1. search_knowledge({'query': 'Python programming language overview'})
+         → {"found": true, "topic": "python", "info": "Python is a high-level programming language created by Guido van Rossum, first released in 1991. Known for its readability and versatility."}
+      2. get_current_date({})
+         → {"date": "2025-10-18", "time": "16:33:45", "full_datetime": "2025-10-18 16:33:45", "year": 2025}
+
+📍 Step 2 (tools_executed)
+   Response ID: resp_0972412dc1ebb78c0068f3f9a9c2f881a1859bc3da39456065
+   🔧 Tools used: 1
+      1. calculator({'expression': '2025 - 1991'})
+         → {"success": true, "result": 34, "expression": "2025 - 1991"}
+
+📍 Step 3 (completed)
+   Response ID: resp_0972412dc1ebb78c0068f3f9aac1ec81a1a47dc9b1bc252b6a
+   💭 Thought: Python is a high-level programming language created by Guido van Rossum, first released in 1991. It is known for its readability and versatility.
+
+Today's date is October 18, 2025. Python was created ...
+
+
+======================================================================
+EXAMPLE 3: Server-side conversation storage
+======================================================================
+
+======================================================================
+USER QUERY: Calculate 15 + 27, then multiply the result by 3
+======================================================================
+
+
+======================================================================
+ITERATION 1
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+======================================================================
+🔧 EXECUTING TOOLS (2 calls)
+======================================================================
+
+  📌 Tool: calculator
+     Args: {
+      "expression": "15 + 27"
+}
+     Result: {"success": true, "result": 42, "expression": "15 + 27"}
+
+  📌 Tool: calculator
+     Args: {
+      "expression": "(15 + 27) * 3"
+}
+     Result: {"success": true, "result": 126, "expression": "(15 + 27) * 3"}
+
+======================================================================
+ITERATION 2
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+The result of \(15 + 27\) is 42, and multiplying that by 3 gives 126.
+
+======================================================================
+✅ TASK COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: The result of \(15 + 27\) is 42, and multiplying that by 3 gives 126.
+Stored Response ID: resp_087a3fccde0179910068f3f9ae0a8c8190b67f16d87b43d809
+(This response ID can be used in future conversations)

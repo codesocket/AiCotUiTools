@@ -1,0 +1,451 @@
+
+======================================================================
+CHAIN-OF-THOUGHT AGENT WITH RESPONSES API
+======================================================================
+
+======================================================================
+EXAMPLE 1: Multi-step mathematical problem
+======================================================================
+
+======================================================================
+USER QUERY: If I have 15 apples and I buy 3 more bags with 8 apples each, then give away half of my apples, how many do I have left? Please show your step-by-step reasoning and use the calculator tool.
+======================================================================
+
+
+======================================================================
+ITERATION 1
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+🤔 **THINK:**
+
+1. You currently have 15 apples.
+2. You buy 3 more bags with 8 apples each.
+3. You then give away half of your apples.
+4. I need to calculate step by step: 
+   - Total apples after buying
+   - Apples left after giving away half
+
+📋 **PLAN:**
+
+1. Calculate total apples after buying the additional bags.
+2. Calculate total apples left after giving away half.
+
+⚡ **ACT:**
+
+1. Calculate the total number of apples after buying more bags:
+
+   - Total apples from bags: \(3 \text{ bags} \times 8 \text{ apples per bag} = 24 \text{ apples}\)
+   - Total apples now: \(15 \text{ original apples} + 24 \text{ apples from bags}\)
+
+Let's calculate the total apples.
+
+======================================================================
+🔧 EXECUTING TOOLS (1 calls)
+======================================================================
+
+  📌 Tool: calculator
+     Args: {
+      "expression": "15 + (3 * 8)"
+}
+     Result: {"success": true, "result": 39, "expression": "15 + (3 * 8)"}
+
+======================================================================
+ITERATION 2
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+🔍 **REFLECT:**
+
+- After buying more bags, the total number of apples is 39.
+
+⚡ **ACT:**
+
+2. Calculate the number of apples left after giving away half:
+
+   - Apples given away: \( \frac{39}{2} \)
+
+Let's perform this calculation.
+
+======================================================================
+🔧 EXECUTING TOOLS (1 calls)
+======================================================================
+
+  📌 Tool: calculator
+     Args: {
+      "expression": "39 / 2"
+}
+     Result: {"success": true, "result": 19.5, "expression": "39 / 2"}
+
+======================================================================
+ITERATION 3
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+🔍 **REFLECT:**
+
+- Half of 39 apples is 19.5. Since you can’t have half an apple in this context, I'll assume you give away 19 apples.
+
+- Apples left: \(39 - 19\)
+
+Let's calculate the remaining apples.
+
+======================================================================
+🔧 EXECUTING TOOLS (1 calls)
+======================================================================
+
+  📌 Tool: calculator
+     Args: {
+      "expression": "39 - 19"
+}
+     Result: {"success": true, "result": 20, "expression": "39 - 19"}
+
+======================================================================
+ITERATION 4
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+✅ **CONCLUDE:**
+
+After buying more apples and giving away half, you have 20 apples left.
+
+**Reasoning Path:**
+1. Start with 15 apples.
+2. Buy 3 bags with 8 apples each: \(15 + 24 = 39\) apples.
+3. Give away half (rounded to nearest whole number): \(39 - 19 = 20\) apples remaining.
+
+======================================================================
+✅ TASK COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: ✅ **CONCLUDE:**
+
+After buying more apples and giving away half, you have 20 apples left.
+
+**Reasoning Path:**
+1. Start with 15 apples.
+2. Buy 3 bags with 8 apples each: \(15 + 24 = 39\) apples.
+3. Give away half (rounded to nearest whole number): \(39 - 19 = 20\) apples remaining.
+Iterations: 4
+Response ID: resp_0af30546f8baa8a90068f3f9be73d8819188e31f5937c217af
+Tokens: 948 (in: 861, out: 87)
+
+======================================================================
+COMPLETE REASONING TRACE
+======================================================================
+
+📍 Step 1 (tools_executed)
+   Response ID: resp_0af30546f8baa8a90068f3f9b676fc819188acbdcfc7b10357
+   💭 Thought: 🤔 **THINK:**
+
+1. You currently have 15 apples.
+2. You buy 3 more bags with 8 apples each.
+3. You then give away half of your apples.
+4. I need to calculate step by step: 
+   - Total apples after buyin...
+   🔧 Tools used: 1
+      1. calculator({'expression': '15 + (3 * 8)'})
+         → {"success": true, "result": 39, "expression": "15 + (3 * 8)"}
+
+📍 Step 2 (tools_executed)
+   Response ID: resp_0af30546f8baa8a90068f3f9ba496481919f78043faf97c684
+   💭 Thought: 🔍 **REFLECT:**
+
+- After buying more bags, the total number of apples is 39.
+
+⚡ **ACT:**
+
+2. Calculate the number of apples left after giving away half:
+
+   - Apples given away: \( \frac{39}{2} \)
+
+Let...
+   🔧 Tools used: 1
+      1. calculator({'expression': '39 / 2'})
+         → {"success": true, "result": 19.5, "expression": "39 / 2"}
+
+📍 Step 3 (tools_executed)
+   Response ID: resp_0af30546f8baa8a90068f3f9bcbf388191a977f402d325fd78
+   💭 Thought: 🔍 **REFLECT:**
+
+- Half of 39 apples is 19.5. Since you can’t have half an apple in this context, I'll assume you give away 19 apples.
+
+- Apples left: \(39 - 19\)
+
+Let's calculate the remaining apples.
+   🔧 Tools used: 1
+      1. calculator({'expression': '39 - 19'})
+         → {"success": true, "result": 20, "expression": "39 - 19"}
+
+📍 Step 4 (completed)
+   Response ID: resp_0af30546f8baa8a90068f3f9be73d8819188e31f5937c217af
+   💭 Thought: ✅ **CONCLUDE:**
+
+After buying more apples and giving away half, you have 20 apples left.
+
+**Reasoning Path:**
+1. Start with 15 apples.
+2. Buy 3 bags with 8 apples each: \(15 + 24 = 39\) apples.
+3. Giv...
+
+
+======================================================================
+EXAMPLE 2: Multi-tool information gathering
+======================================================================
+
+======================================================================
+USER QUERY: What is Python programming language? What's today's date? Then tell me: was Python created more than 30 years ago from today?
+======================================================================
+
+
+======================================================================
+ITERATION 1
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+### 🤔 THINK:
+
+The user has made three requests:
+
+1. **Description of Python programming language**: I need to find a concise description of Python.
+2. **Today's date**: I need to determine the current date.
+3. **Determine if Python was created more than 30 years ago**: Python was first released in 1991. I'll need to calculate if 1991 is more than 30 years ago from today.
+
+### 📋 PLAN:
+
+1. Use the search tool to gather information about the Python programming language.
+2. Use the current date tool to get today's date.
+3. Calculate if Python's release year (1991) is more than 30 years ago from today's date.
+
+### ⚡ ACT:
+
+I'll start by executing steps 1 and 2 in parallel.
+
+======================================================================
+🔧 EXECUTING TOOLS (2 calls)
+======================================================================
+
+  📌 Tool: search_knowledge
+     Args: {
+      "query": "Python programming language"
+}
+     Result: {"found": true, "topic": "python", "info": "Python is a high-level programming language created by Guido van Rossum, first released in 1991. Known for its readability and versatility."}
+
+  📌 Tool: get_current_date
+     Args: {}
+     Result: {"date": "2025-10-18", "time": "16:34:12", "full_datetime": "2025-10-18 16:34:12", "year": 2025}
+
+======================================================================
+ITERATION 2
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+### 🔍 REFLECT:
+
+- I now have a description of Python: It's a high-level programming language, created by Guido van Rossum, first released in 1991. It's known for its readability and versatility.
+- Today's date is October 18, 2025.
+
+### 📋 PLAN:
+
+Next, I'll calculate whether Python was created more than 30 years ago from today.
+
+### ⚡ ACT:
+
+Calculate if the year 1991 was more than 30 years ago from the current year, 2025.
+
+======================================================================
+🔧 EXECUTING TOOLS (1 calls)
+======================================================================
+
+  📌 Tool: calculator
+     Args: {
+      "expression": "2025 - 1991"
+}
+     Result: {"success": true, "result": 34, "expression": "2025 - 1991"}
+
+======================================================================
+ITERATION 3
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+### 🔍 REFLECT:
+
+The calculation shows that 2025 - 1991 = 34 years.
+
+### ✅ CONCLUDE:
+
+1. **Python Programming Language**: Python is a high-level programming language created by Guido van Rossum and first released in 1991. It's renowned for its readability and versatility.
+   
+2. **Today's Date**: October 18, 2025.
+
+3. **Python’s Creation Timeline**: Python was created 34 years ago, which is indeed more than 30 years ago from today.
+
+======================================================================
+✅ TASK COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: ### 🔍 REFLECT:
+
+The calculation shows that 2025 - 1991 = 34 years.
+
+### ✅ CONCLUDE:
+
+1. **Python Programming Language**: Python is a high-level programming language created by Guido van Rossum and first released in 1991. It's renowned for its readability and versatility.
+   
+2. **Today's Date**: October 18, 2025.
+
+3. **Python’s Creation Timeline**: Python was created 34 years ago, which is indeed more than 30 years ago from today.
+Iterations: 3
+Tokens: 951
+
+======================================================================
+COMPLETE REASONING TRACE
+======================================================================
+
+📍 Step 1 (tools_executed)
+   Response ID: resp_0a952697efd0ec320068f3f9c123c4819da001b71849417cbb
+   💭 Thought: ### 🤔 THINK:
+
+The user has made three requests:
+
+1. **Description of Python programming language**: I need to find a concise description of Python.
+2. **Today's date**: I need to determine the current...
+   🔧 Tools used: 2
+      1. search_knowledge({'query': 'Python programming language'})
+         → {"found": true, "topic": "python", "info": "Python is a high-level programming language created by Guido van Rossum, first released in 1991. Known for its readability and versatility."}
+      2. get_current_date({})
+         → {"date": "2025-10-18", "time": "16:34:12", "full_datetime": "2025-10-18 16:34:12", "year": 2025}
+
+📍 Step 2 (tools_executed)
+   Response ID: resp_0a952697efd0ec320068f3f9c4967c819d8b5566eaaede6512
+   💭 Thought: ### 🔍 REFLECT:
+
+- I now have a description of Python: It's a high-level programming language, created by Guido van Rossum, first released in 1991. It's known for its readability and versatility.
+- Tod...
+   🔧 Tools used: 1
+      1. calculator({'expression': '2025 - 1991'})
+         → {"success": true, "result": 34, "expression": "2025 - 1991"}
+
+📍 Step 3 (completed)
+   Response ID: resp_0a952697efd0ec320068f3f9c8a030819db0983d04f9af69ba
+   💭 Thought: ### 🔍 REFLECT:
+
+The calculation shows that 2025 - 1991 = 34 years.
+
+### ✅ CONCLUDE:
+
+1. **Python Programming Language**: Python is a high-level programming language created by Guido van Rossum and fir...
+
+
+======================================================================
+EXAMPLE 3: Server-side conversation storage
+======================================================================
+
+======================================================================
+USER QUERY: Calculate 15 + 27, then multiply the result by 3
+======================================================================
+
+
+======================================================================
+ITERATION 1
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+### 🤔 THINK:
+- The user wants to perform two calculations.
+- First, calculate the sum of 15 and 27.
+- Next, multiply the result of that sum by 3.
+
+### 📋 PLAN:
+1. Use the calculator to find \( 15 + 27 \).
+2. Take the result and multiply it by 3.
+
+### ⚡ ACT:
+I'll first calculate \( 15 + 27 \).
+
+======================================================================
+🔧 EXECUTING TOOLS (1 calls)
+======================================================================
+
+  📌 Tool: calculator
+     Args: {
+      "expression": "15 + 27"
+}
+     Result: {"success": true, "result": 42, "expression": "15 + 27"}
+
+======================================================================
+ITERATION 2
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+### 🔍 REFLECT:
+- The sum of 15 and 27 is 42.
+- Next, I need to multiply this result by 3.
+
+### ⚡ ACT:
+I'll calculate \( 42 \times 3 \).
+
+======================================================================
+🔧 EXECUTING TOOLS (1 calls)
+======================================================================
+
+  📌 Tool: calculator
+     Args: {
+      "expression": "42 * 3"
+}
+     Result: {"success": true, "result": 126, "expression": "42 * 3"}
+
+======================================================================
+ITERATION 3
+======================================================================
+
+🤖 AGENT OUTPUT:
+
+💭 Thinking:
+### 🔍 REFLECT:
+- The result of multiplying 42 by 3 is 126.
+
+### ✅ CONCLUDE:
+The final result of adding 15 and 27, and then multiplying the sum by 3 is \( \boxed{126} \).
+
+======================================================================
+✅ TASK COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: ### 🔍 REFLECT:
+- The result of multiplying 42 by 3 is 126.
+
+### ✅ CONCLUDE:
+The final result of adding 15 and 27, and then multiplying the sum by 3 is \( \boxed{126} \).
+Stored Response ID: resp_06d0e8ffa958c6440068f3f9cf877c8193955534b91d8139cb
+(This response ID can be used in future conversations)
