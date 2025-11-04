@@ -7,23 +7,22 @@ from datetime import datetime
 # Initialize OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-class TreeOfThoughtAgent:
+class TaskDecompositionAgent:
     """
-    Tree of Thought (ToT) Agent using OpenAI's new Responses API.
-    ToT explores multiple reasoning paths simultaneously, evaluates them,
-    and selects the most promising path to continue exploration.
+    Task Decomposition Agent using OpenAI's Responses API.
+    This pattern breaks down complex problems into smaller, manageable subtasks,
+    executes them sequentially, and combines results to solve the original problem.
     The Responses API is stateful and handles conversation management automatically.
     """
 
-    def __init__(self, model: str = "gpt-4o", num_thoughts: int = 3, depth_limit: int = 3):
+    def __init__(self, model: str = "gpt-4o", max_subtasks: int = 5):
         self.model = model
-        self.num_thoughts = num_thoughts  # Number of candidate thoughts to generate
-        self.depth_limit = depth_limit    # Maximum depth of thought tree
+        self.max_subtasks = max_subtasks  # Maximum number of subtasks to decompose into
         self.memory: List[Dict[str, Any]] = []
-        self.thought_tree: Dict[str, Any] = {}  # Store the complete thought tree
+        self.task_plan: Dict[str, Any] = {}  # Store the complete task decomposition plan
         self.conversation_history: List[Dict[str, str]] = []
         self.response_id = None  # Track previous response for conversation continuity
-        
+
     def get_tools_config(self) -> List[Dict]:
         """Define custom tools for the agent"""
         return [
@@ -67,10 +66,10 @@ class TreeOfThoughtAgent:
                 }
             }
         ]
-    
+
     def execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str:
         """Execute a tool and return the result as a JSON string"""
-        
+
         if tool_name == "calculator":
             try:
                 # Safe evaluation
@@ -85,7 +84,7 @@ class TreeOfThoughtAgent:
                     "success": False,
                     "error": str(e)
                 })
-        
+
         elif tool_name == "search_knowledge":
             # Simulated knowledge base
             knowledge_base = {
@@ -94,7 +93,7 @@ class TreeOfThoughtAgent:
                 "openai": "OpenAI is an AI research company founded in 2015 that created GPT models, ChatGPT, and various AI tools.",
                 "javascript": "JavaScript is a programming language commonly used for web development, created in 1995 by Brendan Eich.",
             }
-            
+
             query = arguments["query"].lower()
             for key, value in knowledge_base.items():
                 if key in query:
@@ -103,12 +102,12 @@ class TreeOfThoughtAgent:
                         "topic": key,
                         "info": value
                     })
-            
+
             return json.dumps({
                 "found": False,
                 "message": "No relevant information found in knowledge base"
             })
-        
+
         elif tool_name == "get_current_date":
             current = datetime.now()
             return json.dumps({
@@ -117,88 +116,70 @@ class TreeOfThoughtAgent:
                 "full_datetime": current.strftime('%Y-%m-%d %H:%M:%S'),
                 "year": current.year
             })
-        
+
         return json.dumps({"error": "Tool not found"})
-    
-    def get_system_instructions(self, mode: str = "generate") -> str:
-        """System instructions that implement the Tree of Thought pattern"""
-        if mode == "generate":
-            return f"""You are a helpful AI agent that uses the Tree of Thought (ToT) framework.
 
-CRITICAL: When asked to generate thoughts, provide {self.num_thoughts} DIFFERENT reasoning paths.
+    def get_system_instructions(self, mode: str = "decompose") -> str:
+        """System instructions that implement the Task Decomposition pattern"""
+        if mode == "decompose":
+            return f"""You are a helpful AI agent that uses Task Decomposition to solve complex problems.
 
-Your task is to generate {self.num_thoughts} distinct candidate thoughts for solving the problem.
-Each thought should represent a different approach or next step.
+Your task is to break down the given problem into a sequence of {self.max_subtasks} or fewer subtasks.
+Each subtask should be:
+1. Clear and specific
+2. Achievable with available tools or reasoning
+3. Build upon previous subtasks sequentially
 
-Format your response as a JSON array with {self.num_thoughts} objects, each containing:
-- "thought": A clear reasoning step or approach
-- "reasoning": Why this approach might work
-- "next_action": What tool to use next (if any)
+Format your response as a JSON object:
+{{
+  "analysis": "Brief analysis of the problem",
+  "subtasks": [
+    {{
+      "id": 1,
+      "description": "Clear description of the subtask",
+      "tool_needed": "calculator|search_knowledge|get_current_date|reasoning",
+      "depends_on": []
+    }},
+    {{
+      "id": 2,
+      "description": "Next subtask",
+      "tool_needed": "calculator",
+      "depends_on": [1]
+    }}
+  ],
+  "final_step": "How to combine results to answer the original question"
+}}
 
-Example format:
-[
-  {{
-    "thought": "First approach...",
-    "reasoning": "This works because...",
-    "next_action": "calculator"
-  }},
-  {{
-    "thought": "Second approach...",
-    "reasoning": "This is better because...",
-    "next_action": "search_knowledge"
-  }},
-  {{
-    "thought": "Third approach...",
-    "reasoning": "Alternative method...",
-    "next_action": null
-  }}
-]
+Be logical and efficient in your decomposition."""
 
-Be creative and explore different reasoning paths."""
+        elif mode == "execute":
+            return """You are a helpful AI agent executing a specific subtask.
 
-        elif mode == "evaluate":
-            return """You are an AI evaluator that scores different reasoning paths.
+Use the available tools to complete the subtask.
+Provide clear output about what you've done and what result you obtained.
+If the subtask requires reasoning without tools, provide your analysis."""
 
-Your task is to evaluate the given thoughts and score each one based on:
-1. **Correctness**: Is the reasoning sound?
-2. **Efficiency**: Does it lead to the goal quickly?
-3. **Completeness**: Does it address the full problem?
+        else:  # synthesize mode
+            return """You are a helpful AI agent synthesizing results from multiple subtasks.
 
-Rate each thought on a scale of 0-10 and provide brief justification.
+Review the completed subtasks and their results.
+Combine them to provide a comprehensive final answer to the original question.
+Ensure your answer is clear, complete, and addresses all aspects of the question."""
 
-Format your response as a JSON array:
-[
-  {
-    "thought_id": 0,
-    "score": 8.5,
-    "justification": "Strong reasoning but could be more efficient"
-  },
-  ...
-]"""
+    def decompose_task(self, user_query: str) -> Dict[str, Any]:
+        """Decompose the user's query into subtasks"""
+        print(f"\n📋 DECOMPOSING TASK INTO SUBTASKS...")
 
-        else:  # execute mode
-            return """You are a helpful AI agent executing a specific reasoning path.
+        prompt = f"""Problem to solve: {user_query}
 
-Follow the selected thought path and use the available tools to gather information.
-After using tools, provide your observation and determine if you can answer the question.
-
-If you have enough information, provide the final answer.
-If not, indicate what additional information is needed."""
-
-    def generate_thoughts(self, context: str) -> List[Dict[str, Any]]:
-        """Generate multiple candidate thoughts for the current state"""
-        print(f"\n🌳 GENERATING {self.num_thoughts} CANDIDATE THOUGHTS...")
-
-        prompt = f"""Current problem/context: {context}
-
-Generate {self.num_thoughts} different reasoning paths to solve this problem.
-Each path should explore a different approach or strategy."""
+Break this problem down into a sequence of subtasks that can be executed step by step.
+Consider what information is needed and in what order."""
 
         try:
             response = client.responses.create(
                 model=self.model,
                 input=prompt,
-                instructions=self.get_system_instructions(mode="generate"),
+                instructions=self.get_system_instructions(mode="decompose"),
                 tools=self.get_tools_config()
             )
 
@@ -211,87 +192,153 @@ Each path should explore a different approach or strategy."""
                             response_text += content_item.text
 
             # Try to parse JSON from response
-            # Look for JSON array in the response
             import re
-            json_match = re.search(r'\[[\s\S]*\]', response_text)
+            json_match = re.search(r'\{[\s\S]*\}', response_text)
             if json_match:
-                thoughts = json.loads(json_match.group())
-                print(f"✅ Generated {len(thoughts)} thoughts")
-                for i, thought in enumerate(thoughts):
-                    print(f"\n  Thought {i+1}:")
-                    print(f"    - Path: {thought.get('thought', 'N/A')[:100]}...")
-                    print(f"    - Reasoning: {thought.get('reasoning', 'N/A')[:100]}...")
-                return thoughts
+                task_plan = json.loads(json_match.group())
+                print(f"✅ Decomposed into {len(task_plan.get('subtasks', []))} subtasks")
+                print(f"\n📊 Analysis: {task_plan.get('analysis', 'N/A')}")
+
+                for subtask in task_plan.get('subtasks', []):
+                    print(f"\n  Subtask {subtask.get('id')}:")
+                    print(f"    - Description: {subtask.get('description')}")
+                    print(f"    - Tool needed: {subtask.get('tool_needed', 'N/A')}")
+                    print(f"    - Depends on: {subtask.get('depends_on', [])}")
+
+                print(f"\n  Final step: {task_plan.get('final_step', 'N/A')}")
+                return task_plan
             else:
                 print("⚠️ Could not parse JSON, using fallback")
-                return [{"thought": response_text, "reasoning": "Direct response", "next_action": None}]
+                return {
+                    "analysis": "Could not decompose properly",
+                    "subtasks": [{
+                        "id": 1,
+                        "description": user_query,
+                        "tool_needed": "reasoning",
+                        "depends_on": []
+                    }],
+                    "final_step": "Provide direct answer"
+                }
 
         except Exception as e:
-            print(f"❌ Error generating thoughts: {e}")
-            return [{"thought": f"Error: {e}", "reasoning": "Fallback", "next_action": None}]
+            print(f"❌ Error decomposing task: {e}")
+            return {
+                "analysis": f"Error: {e}",
+                "subtasks": [],
+                "final_step": "Error occurred"
+            }
 
-    def evaluate_thoughts(self, thoughts: List[Dict[str, Any]], context: str) -> List[Dict[str, Any]]:
-        """Evaluate and score the generated thoughts"""
-        print(f"\n📊 EVALUATING {len(thoughts)} THOUGHTS...")
+    def execute_subtask(self, subtask: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a single subtask"""
+        subtask_id = subtask.get('id', 0)
+        description = subtask.get('description', '')
+        tool_needed = subtask.get('tool_needed', 'reasoning')
 
-        thoughts_str = json.dumps(thoughts, indent=2)
-        prompt = f"""Problem context: {context}
+        print(f"\n⚡ EXECUTING SUBTASK {subtask_id}: {description}")
 
-Candidate thoughts to evaluate:
-{thoughts_str}
+        # Build context from previous subtasks
+        context_str = "Previous results:\n"
+        for prev_id, prev_result in context.items():
+            context_str += f"Subtask {prev_id}: {prev_result.get('output', 'N/A')}\n"
 
-Evaluate each thought and provide scores."""
+        prompt = f"""Execute this subtask: {description}
+
+{context_str}
+
+Use the appropriate tool or provide reasoning to complete this subtask."""
 
         try:
             response = client.responses.create(
                 model=self.model,
                 input=prompt,
-                instructions=self.get_system_instructions(mode="evaluate")
+                instructions=self.get_system_instructions(mode="execute"),
+                tools=self.get_tools_config()
             )
 
-            # Extract the response text
-            response_text = ""
+            result = {
+                "subtask_id": subtask_id,
+                "description": description,
+                "output": "",
+                "tool_used": None,
+                "tool_result": None
+            }
+
+            # Process response - look for tool calls and text
+            for item in response.output:
+                if item.type == "function_call":
+                    tool_name = item.name
+                    tool_args = json.loads(item.arguments)
+                    print(f"  🔧 Using tool: {tool_name}")
+                    print(f"  📝 Arguments: {json.dumps(tool_args, indent=4)}")
+
+                    tool_result = self.execute_tool(tool_name, tool_args)
+                    print(f"  ✅ Result: {tool_result}")
+
+                    result["tool_used"] = tool_name
+                    result["tool_result"] = tool_result
+                    result["output"] = tool_result
+
+                elif item.type == "message":
+                    for content_item in item.content:
+                        if hasattr(content_item, 'text'):
+                            result["output"] += content_item.text
+
+            if not result["output"]:
+                result["output"] = "No output generated"
+
+            print(f"  ✅ Subtask {subtask_id} completed")
+            return result
+
+        except Exception as e:
+            print(f"  ❌ Error executing subtask {subtask_id}: {e}")
+            return {
+                "subtask_id": subtask_id,
+                "description": description,
+                "output": f"Error: {e}",
+                "error": str(e)
+            }
+
+    def synthesize_results(self, user_query: str, task_plan: Dict[str, Any],
+                          results: List[Dict[str, Any]]) -> str:
+        """Synthesize all subtask results into a final answer"""
+        print(f"\n🔄 SYNTHESIZING FINAL ANSWER...")
+
+        results_str = json.dumps(results, indent=2)
+
+        prompt = f"""Original question: {user_query}
+
+Task decomposition plan:
+{json.dumps(task_plan, indent=2)}
+
+Completed subtasks and their results:
+{results_str}
+
+Based on all the subtask results, provide a comprehensive final answer to the original question."""
+
+        try:
+            response = client.responses.create(
+                model=self.model,
+                input=prompt,
+                instructions=self.get_system_instructions(mode="synthesize")
+            )
+
+            final_answer = ""
             for item in response.output:
                 if item.type == "message":
                     for content_item in item.content:
                         if hasattr(content_item, 'text'):
-                            response_text += content_item.text
+                            final_answer += content_item.text
 
-            # Try to parse JSON from response
-            import re
-            json_match = re.search(r'\[[\s\S]*\]', response_text)
-            if json_match:
-                evaluations = json.loads(json_match.group())
-                print(f"✅ Evaluated {len(evaluations)} thoughts")
-                for eval_item in evaluations:
-                    print(f"  Thought {eval_item.get('thought_id', 'N/A')}: Score {eval_item.get('score', 0)}/10")
-                    print(f"    Justification: {eval_item.get('justification', 'N/A')}")
-                return evaluations
-            else:
-                # Fallback: assign equal scores
-                return [{"thought_id": i, "score": 5.0, "justification": "Could not evaluate"}
-                        for i in range(len(thoughts))]
+            print(f"✅ Final answer synthesized")
+            return final_answer
 
         except Exception as e:
-            print(f"❌ Error evaluating thoughts: {e}")
-            return [{"thought_id": i, "score": 5.0, "justification": f"Error: {e}"}
-                    for i in range(len(thoughts))]
-
-    def select_best_thought(self, thoughts: List[Dict[str, Any]],
-                           evaluations: List[Dict[str, Any]]) -> tuple:
-        """Select the highest-scored thought"""
-        best_eval = max(evaluations, key=lambda x: x.get('score', 0))
-        best_idx = best_eval.get('thought_id', 0)
-        best_thought = thoughts[best_idx] if best_idx < len(thoughts) else thoughts[0]
-
-        print(f"\n🎯 SELECTED BEST THOUGHT (ID: {best_idx}, Score: {best_eval.get('score', 0)}/10)")
-        print(f"   Path: {best_thought.get('thought', 'N/A')[:100]}...")
-
-        return best_thought, best_eval
+            print(f"❌ Error synthesizing results: {e}")
+            return f"Error synthesizing results: {e}"
 
     def run(self, user_query: str, store_conversation: bool = False) -> Dict[str, Any]:
         """
-        Main Tree of Thought agent loop using Responses API.
+        Main Task Decomposition agent loop using Responses API.
 
         Args:
             user_query: The user's question or request
@@ -301,181 +348,83 @@ Evaluate each thought and provide scores."""
         print(f"USER QUERY: {user_query}")
         print(f"{'='*70}\n")
 
-        depth = 0
-        context = user_query
-        selected_path = []
+        try:
+            # Step 1: Decompose the task into subtasks
+            task_plan = self.decompose_task(user_query)
+            self.task_plan = task_plan
 
-        # Initialize thought tree
-        self.thought_tree = {
-            "query": user_query,
-            "depth_limit": self.depth_limit,
-            "paths": []
-        }
+            if not task_plan.get('subtasks'):
+                return {
+                    "answer": "Could not decompose task into subtasks",
+                    "task_plan": task_plan,
+                    "results": [],
+                    "error": "No subtasks generated"
+                }
 
-        while depth < self.depth_limit:
-            depth += 1
+            # Step 2: Execute subtasks sequentially
             print(f"\n{'='*70}")
-            print(f"TREE DEPTH: {depth}/{self.depth_limit}")
+            print(f"EXECUTING {len(task_plan['subtasks'])} SUBTASKS")
             print(f"{'='*70}\n")
 
-            try:
-                # Step 1: Generate multiple candidate thoughts
-                thoughts = self.generate_thoughts(context)
+            results = []
+            context = {}  # Store results of completed subtasks
 
-                # Step 2: Evaluate the thoughts
-                evaluations = self.evaluate_thoughts(thoughts, context)
+            for subtask in task_plan['subtasks']:
+                result = self.execute_subtask(subtask, context)
+                results.append(result)
+                context[subtask.get('id')] = result
 
-                # Step 3: Select the best thought
-                best_thought, best_eval = self.select_best_thought(thoughts, evaluations)
+            # Step 3: Synthesize final answer
+            print(f"\n{'='*70}")
+            print("SYNTHESIS PHASE")
+            print(f"{'='*70}\n")
 
-                # Store in tree
-                tree_node = {
-                    "depth": depth,
-                    "context": context,
-                    "candidates": thoughts,
-                    "evaluations": evaluations,
-                    "selected": best_thought,
-                    "selected_score": best_eval.get('score', 0)
-                }
-                self.thought_tree["paths"].append(tree_node)
-                selected_path.append(best_thought)
+            final_answer = self.synthesize_results(user_query, task_plan, results)
 
-                # Step 4: Execute action if needed
-                next_action = best_thought.get('next_action')
-                if next_action and next_action in ['calculator', 'search_knowledge', 'get_current_date']:
-                    print(f"\n⚡ EXECUTING ACTION: {next_action}")
+            print(f"\n{'='*70}")
+            print("✅ TASK DECOMPOSITION COMPLETED")
+            print(f"{'='*70}\n")
 
-                    # Use the model to determine the arguments for the tool
-                    action_prompt = f"""Based on this reasoning path: {best_thought.get('thought')}
+            return {
+                "answer": final_answer,
+                "task_plan": task_plan,
+                "results": results,
+                "num_subtasks": len(task_plan['subtasks'])
+            }
 
-Execute the {next_action} tool. What arguments should be used?
-Provide your response as a JSON object with the tool arguments.
-For calculator: {{"expression": "..."}}
-For search_knowledge: {{"query": "..."}}
-For get_current_date: {{}}"""
+        except Exception as e:
+            print(f"\n❌ Error in task decomposition: {str(e)}")
+            return {
+                "answer": f"Error occurred: {str(e)}",
+                "task_plan": self.task_plan,
+                "results": [],
+                "error": str(e)
+            }
 
-                    response = client.responses.create(
-                        model=self.model,
-                        input=action_prompt,
-                        instructions=self.get_system_instructions(mode="execute"),
-                        tools=self.get_tools_config()
-                    )
-
-                    # Look for tool calls
-                    tool_result = None
-                    for item in response.output:
-                        if item.type == "function_call" and item.name == next_action:
-                            tool_args = json.loads(item.arguments)
-                            print(f"  Args: {json.dumps(tool_args, indent=4)}")
-                            tool_result = self.execute_tool(next_action, tool_args)
-                            print(f"  Result: {tool_result}")
-                            tree_node["action_result"] = tool_result
-                            break
-
-                    # Update context with the result
-                    if tool_result:
-                        context = f"{context}\n\nPrevious step: {best_thought.get('thought')}\nAction taken: {next_action}\nResult: {tool_result}"
-                    else:
-                        context = f"{context}\n\nPrevious step: {best_thought.get('thought')}"
-                else:
-                    # No action needed, might have the answer
-                    print(f"\n✅ NO ACTION NEEDED - Checking if we have the answer...")
-
-                    # Check if we have enough information to answer
-                    check_prompt = f"""Original question: {user_query}
-
-Reasoning path so far:
-{json.dumps(selected_path, indent=2)}
-
-Do you have enough information to answer the question? If yes, provide the final answer.
-If no, explain what additional information is needed."""
-
-                    response = client.responses.create(
-                        model=self.model,
-                        input=check_prompt,
-                        instructions=self.get_system_instructions(mode="execute")
-                    )
-
-                    final_answer = ""
-                    for item in response.output:
-                        if item.type == "message":
-                            for content_item in item.content:
-                                if hasattr(content_item, 'text'):
-                                    final_answer += content_item.text
-
-                    # Check if this is truly final or we need more depth
-                    if "final answer" in final_answer.lower() or depth >= self.depth_limit:
-                        print(f"\n{'='*70}")
-                        print("✅ TREE OF THOUGHT COMPLETED")
-                        print(f"{'='*70}\n")
-
-                        return {
-                            "answer": final_answer,
-                            "thought_tree": self.thought_tree,
-                            "selected_path": selected_path,
-                            "depth_reached": depth,
-                            "response_id": response.id
-                        }
-                    else:
-                        context = f"{context}\n\nPrevious step: {best_thought.get('thought')}\nAnalysis: {final_answer}"
-
-            except Exception as e:
-                print(f"\n❌ Error at depth {depth}: {str(e)}")
-                return {
-                    "answer": f"Error occurred: {str(e)}",
-                    "thought_tree": self.thought_tree,
-                    "selected_path": selected_path,
-                    "depth_reached": depth,
-                    "error": str(e)
-                }
-
-        # Max depth reached
-        print(f"\n⚠️ Max depth ({self.depth_limit}) reached")
-        return {
-            "answer": "Reached maximum tree depth",
-            "thought_tree": self.thought_tree,
-            "selected_path": selected_path,
-            "depth_reached": depth
-        }
-    
-    def print_reasoning_trace(self):
-        """Pretty print the complete Tree of Thought trace"""
+    def print_execution_trace(self):
+        """Pretty print the complete Task Decomposition trace"""
         print(f"\n{'='*70}")
-        print("COMPLETE TREE OF THOUGHT TRACE")
+        print("COMPLETE TASK DECOMPOSITION TRACE")
         print(f"{'='*70}\n")
 
-        if not self.thought_tree.get("paths"):
-            print("No reasoning trace available")
+        if not self.task_plan:
+            print("No task plan available")
             return
 
-        print(f"Original Query: {self.thought_tree.get('query', 'N/A')}")
-        print(f"Depth Limit: {self.thought_tree.get('depth_limit', 'N/A')}\n")
+        print(f"📋 Task Plan Analysis: {self.task_plan.get('analysis', 'N/A')}\n")
 
-        for node in self.thought_tree["paths"]:
-            print(f"🌳 DEPTH {node['depth']}")
-            print(f"   Context: {node['context'][:100]}...")
-            print(f"\n   Generated {len(node['candidates'])} candidate thoughts:")
+        print(f"📝 Decomposed Subtasks ({len(self.task_plan.get('subtasks', []))}):")
+        for subtask in self.task_plan.get('subtasks', []):
+            print(f"\n  {subtask.get('id')}. {subtask.get('description')}")
+            print(f"     Tool needed: {subtask.get('tool_needed', 'N/A')}")
+            print(f"     Dependencies: {subtask.get('depends_on', [])}")
 
-            for i, thought in enumerate(node['candidates']):
-                eval_info = next((e for e in node['evaluations'] if e.get('thought_id') == i), {})
-                score = eval_info.get('score', 'N/A')
-                is_selected = (thought == node['selected'])
-
-                marker = "🎯" if is_selected else "  "
-                print(f"\n   {marker} Candidate {i+1} (Score: {score}/10):")
-                print(f"      Thought: {thought.get('thought', 'N/A')[:80]}...")
-                print(f"      Reasoning: {thought.get('reasoning', 'N/A')[:80]}...")
-                print(f"      Next Action: {thought.get('next_action', 'None')}")
-
-                if is_selected and 'action_result' in node:
-                    print(f"      ⚡ Executed with result: {node['action_result'][:80]}...")
-
-            print()
+        print(f"\n🎯 Final Step: {self.task_plan.get('final_step', 'N/A')}")
 
     def reset(self):
         """Reset conversation state"""
         self.memory = []
-        self.thought_tree = {}
+        self.task_plan = {}
         self.conversation_history = []
         self.response_id = None
 
@@ -483,15 +432,15 @@ If no, explain what additional information is needed."""
 # Example usage
 def main():
     print("\n" + "="*70)
-    print("TREE OF THOUGHT AGENT WITH RESPONSES API")
+    print("TASK DECOMPOSITION AGENT WITH RESPONSES API")
     print("="*70)
 
     # Example 1: Multi-step reasoning with calculations
     print("\n" + "="*70)
-    print("EXAMPLE 1: Multi-step mathematical problem with Tree of Thought")
+    print("EXAMPLE 1: Multi-step mathematical problem with Task Decomposition")
     print("="*70)
 
-    agent = TreeOfThoughtAgent(model="gpt-4o", num_thoughts=3, depth_limit=3)
+    agent = TaskDecompositionAgent(model="gpt-4o", max_subtasks=5)
 
     result = agent.run(
         "If I have 15 apples and I buy 3 more bags with 8 apples each, "
@@ -503,17 +452,16 @@ def main():
     print("📊 FINAL RESULT")
     print(f"{'='*70}")
     print(f"Answer: {result['answer']}")
-    print(f"Depth Reached: {result.get('depth_reached', 'N/A')}")
-    print(f"Response ID: {result.get('response_id', 'N/A')}")
+    print(f"Number of Subtasks: {result.get('num_subtasks', 'N/A')}")
 
-    agent.print_reasoning_trace()
+    agent.print_execution_trace()
 
     # Example 2: Information gathering with multiple tools
     print("\n" + "="*70)
-    print("EXAMPLE 2: Multi-tool information gathering with ToT")
+    print("EXAMPLE 2: Multi-tool information gathering with Task Decomposition")
     print("="*70)
 
-    agent2 = TreeOfThoughtAgent(model="gpt-4o", num_thoughts=3, depth_limit=2)
+    agent2 = TaskDecompositionAgent(model="gpt-4o", max_subtasks=5)
 
     result2 = agent2.run(
         "What is Python programming language? What's today's date? "
@@ -525,20 +473,20 @@ def main():
     print("📊 FINAL RESULT")
     print(f"{'='*70}")
     print(f"Answer: {result2['answer']}")
-    print(f"Depth Reached: {result2.get('depth_reached', 'N/A')}")
+    print(f"Number of Subtasks: {result2.get('num_subtasks', 'N/A')}")
 
-    agent2.print_reasoning_trace()
+    agent2.print_execution_trace()
 
-    # Example 3: Complex problem requiring exploration
+    # Example 3: Complex problem requiring systematic breakdown
     print("\n" + "="*70)
-    print("EXAMPLE 3: Complex problem exploration")
+    print("EXAMPLE 3: Complex problem with systematic task breakdown")
     print("="*70)
 
-    agent3 = TreeOfThoughtAgent(model="gpt-4o", num_thoughts=4, depth_limit=3)
+    agent3 = TaskDecompositionAgent(model="gpt-4o", max_subtasks=6)
 
     result3 = agent3.run(
         "I need to plan a data science project. What are the key steps? "
-        "Consider different approaches and select the best one.",
+        "Break it down systematically and provide a comprehensive plan.",
         store_conversation=True
     )
 
@@ -546,14 +494,13 @@ def main():
     print("📊 FINAL RESULT")
     print(f"{'='*70}")
     print(f"Answer: {result3['answer']}")
-    print(f"Depth Reached: {result3.get('depth_reached', 'N/A')}")
-    print(f"Stored Response ID: {result3.get('response_id')}")
+    print(f"Number of Subtasks: {result3.get('num_subtasks', 'N/A')}")
 
-    # Show selected path
-    if 'selected_path' in result3:
-        print(f"\n📍 Selected reasoning path:")
-        for i, step in enumerate(result3['selected_path'], 1):
-            print(f"  {i}. {step.get('thought', 'N/A')[:60]}...")
+    # Show task plan
+    if 'task_plan' in result3 and 'subtasks' in result3['task_plan']:
+        print(f"\n📍 Task decomposition breakdown:")
+        for subtask in result3['task_plan']['subtasks']:
+            print(f"  {subtask.get('id')}. {subtask.get('description')}")
 
 
 if __name__ == "__main__":

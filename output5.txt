@@ -1,0 +1,388 @@
+
+======================================================================
+TASK DECOMPOSITION AGENT WITH RESPONSES API
+======================================================================
+
+======================================================================
+EXAMPLE 1: Multi-step mathematical problem with Task Decomposition
+======================================================================
+
+======================================================================
+USER QUERY: If I have 15 apples and I buy 3 more bags with 8 apples each, then give away half of my apples, how many do I have left?
+======================================================================
+
+
+📋 DECOMPOSING TASK INTO SUBTASKS...
+✅ Decomposed into 4 subtasks
+
+📊 Analysis: The problem involves calculating the total number of apples after purchasing additional bags, and then determining the amount left after giving away half.
+
+  Subtask 1:
+    - Description: Calculate the total number of apples bought in 3 bags, with each bag containing 8 apples.
+    - Tool needed: calculator
+    - Depends on: []
+
+  Subtask 2:
+    - Description: Add the apples from the bags to the initial 15 apples.
+    - Tool needed: calculator
+    - Depends on: [1]
+
+  Subtask 3:
+    - Description: Calculate half of the total apples obtained in the previous step.
+    - Tool needed: calculator
+    - Depends on: [2]
+
+  Subtask 4:
+    - Description: Subtract the result from the previous step from the total apples to find out how many apples are left.
+    - Tool needed: calculator
+    - Depends on: [2, 3]
+
+  Final step: The result from the last subtask will provide the number of apples you have left after giving away half.
+
+======================================================================
+EXECUTING 4 SUBTASKS
+======================================================================
+
+
+⚡ EXECUTING SUBTASK 1: Calculate the total number of apples bought in 3 bags, with each bag containing 8 apples.
+  🔧 Using tool: calculator
+  📝 Arguments: {
+    "expression": "3 * 8"
+}
+  ✅ Result: {"success": true, "result": 24, "expression": "3 * 8"}
+  ✅ Subtask 1 completed
+
+⚡ EXECUTING SUBTASK 2: Add the apples from the bags to the initial 15 apples.
+  🔧 Using tool: calculator
+  📝 Arguments: {
+    "expression": "15 + 24"
+}
+  ✅ Result: {"success": true, "result": 39, "expression": "15 + 24"}
+  ✅ Subtask 2 completed
+
+⚡ EXECUTING SUBTASK 3: Calculate half of the total apples obtained in the previous step.
+  🔧 Using tool: calculator
+  📝 Arguments: {
+    "expression": "39 / 2"
+}
+  ✅ Result: {"success": true, "result": 19.5, "expression": "39 / 2"}
+  ✅ Subtask 3 completed
+
+⚡ EXECUTING SUBTASK 4: Subtract the result from the previous step from the total apples to find out how many apples are left.
+  🔧 Using tool: calculator
+  📝 Arguments: {
+    "expression": "39 - 19.5"
+}
+  ✅ Result: {"success": true, "result": 19.5, "expression": "39 - 19.5"}
+  ✅ Subtask 4 completed
+
+======================================================================
+SYNTHESIS PHASE
+======================================================================
+
+
+🔄 SYNTHESIZING FINAL ANSWER...
+✅ Final answer synthesized
+
+======================================================================
+✅ TASK DECOMPOSITION COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: To determine how many apples you have left after buying more and giving some away, follow these steps:
+
+1. **Initial Apples**: You start with 15 apples.
+
+2. **Apples from Bags**: You buy 3 bags, each containing 8 apples, which adds up to \(3 \times 8 = 24\) apples.
+
+3. **Total Apples**: Add the apples from the bags to your initial amount: \(15 + 24 = 39\) apples.
+
+4. **Giving Away Half**: You give away half of the total apples: \(\frac{39}{2} = 19.5\) apples.
+
+5. **Apples Left**: Subtract the given away apples from the total: \(39 - 19.5 = 19.5\) apples.
+
+Therefore, you have 19.5 apples left. If dealing with whole apples, consider how you manage the half apple, typically rounding down, leaving you with 19 whole apples.
+Number of Subtasks: 4
+
+======================================================================
+COMPLETE TASK DECOMPOSITION TRACE
+======================================================================
+
+📋 Task Plan Analysis: The problem involves calculating the total number of apples after purchasing additional bags, and then determining the amount left after giving away half.
+
+📝 Decomposed Subtasks (4):
+
+  1. Calculate the total number of apples bought in 3 bags, with each bag containing 8 apples.
+     Tool needed: calculator
+     Dependencies: []
+
+  2. Add the apples from the bags to the initial 15 apples.
+     Tool needed: calculator
+     Dependencies: [1]
+
+  3. Calculate half of the total apples obtained in the previous step.
+     Tool needed: calculator
+     Dependencies: [2]
+
+  4. Subtract the result from the previous step from the total apples to find out how many apples are left.
+     Tool needed: calculator
+     Dependencies: [2, 3]
+
+🎯 Final Step: The result from the last subtask will provide the number of apples you have left after giving away half.
+
+======================================================================
+EXAMPLE 2: Multi-tool information gathering with Task Decomposition
+======================================================================
+
+======================================================================
+USER QUERY: What is Python programming language? What's today's date? Then tell me: was Python created more than 30 years ago from today?
+======================================================================
+
+
+📋 DECOMPOSING TASK INTO SUBTASKS...
+✅ Decomposed into 3 subtasks
+
+📊 Analysis: The problem requires understanding what Python is, discovering today's date, and determining whether Python was created over 30 years ago based on its release date.
+
+  Subtask 1:
+    - Description: Retrieve information about the Python programming language, including its release date.
+    - Tool needed: search_knowledge
+    - Depends on: []
+
+  Subtask 2:
+    - Description: Get today's date to compare with Python's release date.
+    - Tool needed: get_current_date
+    - Depends on: []
+
+  Subtask 3:
+    - Description: Determine if Python was created more than 30 years ago by calculating the difference between today's date and Python's release date.
+    - Tool needed: calculator
+    - Depends on: [1, 2]
+
+  Final step: Combine the information about Python's creation date and today's date to conclude whether Python was created more than 30 years ago, and summarize with details about Python.
+
+======================================================================
+EXECUTING 3 SUBTASKS
+======================================================================
+
+
+⚡ EXECUTING SUBTASK 1: Retrieve information about the Python programming language, including its release date.
+  🔧 Using tool: search_knowledge
+  📝 Arguments: {
+    "query": "Python programming language release date and information"
+}
+  ✅ Result: {"found": true, "topic": "python", "info": "Python is a high-level programming language created by Guido van Rossum, first released in 1991. Known for its readability and versatility."}
+  ✅ Subtask 1 completed
+
+⚡ EXECUTING SUBTASK 2: Get today's date to compare with Python's release date.
+  🔧 Using tool: get_current_date
+  📝 Arguments: {}
+  ✅ Result: {"date": "2025-10-20", "time": "12:36:08", "full_datetime": "2025-10-20 12:36:08", "year": 2025}
+  ✅ Subtask 2 completed
+
+⚡ EXECUTING SUBTASK 3: Determine if Python was created more than 30 years ago by calculating the difference between today's date and Python's release date.
+  🔧 Using tool: calculator
+  📝 Arguments: {
+    "expression": "2025 - 1991"
+}
+  ✅ Result: {"success": true, "result": 34, "expression": "2025 - 1991"}
+  ✅ Subtask 3 completed
+
+======================================================================
+SYNTHESIS PHASE
+======================================================================
+
+
+🔄 SYNTHESIZING FINAL ANSWER...
+✅ Final answer synthesized
+
+======================================================================
+✅ TASK DECOMPOSITION COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: Python is a high-level programming language created by Guido van Rossum, first released in 1991. It is known for its readability and versatility, making it a popular choice for a wide range of applications, from web development to data analysis and beyond.
+
+Today's date is October 20, 2025. Given that Python was released in 1991, it has been 34 years since its creation. Therefore, yes, Python was created more than 30 years ago.
+Number of Subtasks: 3
+
+======================================================================
+COMPLETE TASK DECOMPOSITION TRACE
+======================================================================
+
+📋 Task Plan Analysis: The problem requires understanding what Python is, discovering today's date, and determining whether Python was created over 30 years ago based on its release date.
+
+📝 Decomposed Subtasks (3):
+
+  1. Retrieve information about the Python programming language, including its release date.
+     Tool needed: search_knowledge
+     Dependencies: []
+
+  2. Get today's date to compare with Python's release date.
+     Tool needed: get_current_date
+     Dependencies: []
+
+  3. Determine if Python was created more than 30 years ago by calculating the difference between today's date and Python's release date.
+     Tool needed: calculator
+     Dependencies: [1, 2]
+
+🎯 Final Step: Combine the information about Python's creation date and today's date to conclude whether Python was created more than 30 years ago, and summarize with details about Python.
+
+======================================================================
+EXAMPLE 3: Complex problem with systematic task breakdown
+======================================================================
+
+======================================================================
+USER QUERY: I need to plan a data science project. What are the key steps? Break it down systematically and provide a comprehensive plan.
+======================================================================
+
+
+📋 DECOMPOSING TASK INTO SUBTASKS...
+✅ Decomposed into 6 subtasks
+
+📊 Analysis: To plan a data science project, we need to organize key steps that align with common data science methodologies. This involves understanding the project goals, data requirements, analysis, and implementation phases.
+
+  Subtask 1:
+    - Description: Define the objectives and scope of the data science project. Identify the problem to be solved and the desired outcomes.
+    - Tool needed: reasoning
+    - Depends on: []
+
+  Subtask 2:
+    - Description: Identify and gather relevant data sources necessary for the project. Determine what data is needed and whether it is available.
+    - Tool needed: search_knowledge
+    - Depends on: [1]
+
+  Subtask 3:
+    - Description: Perform preliminary data exploration and cleaning to ensure data quality. This involves checking for missing values, outliers, and inconsistencies.
+    - Tool needed: reasoning
+    - Depends on: [2]
+
+  Subtask 4:
+    - Description: Select appropriate data analysis methods and algorithms based on project objectives. Consider techniques such as statistical analysis, machine learning, etc.
+    - Tool needed: search_knowledge
+    - Depends on: [3]
+
+  Subtask 5:
+    - Description: Develop a plan for model training, validation, and testing. Outline how the model's performance will be evaluated and improved iteratively.
+    - Tool needed: reasoning
+    - Depends on: [4]
+
+  Subtask 6:
+    - Description: Plan for deployment and continuous monitoring of the model in a real-world setting. Consider infrastructure requirements and how results will be communicated to stakeholders.
+    - Tool needed: reasoning
+    - Depends on: [5]
+
+  Final step: Combine the insights from each step to create a comprehensive plan that covers all phases of the data science project, ensuring alignment with objectives and readiness for execution.
+
+======================================================================
+EXECUTING 6 SUBTASKS
+======================================================================
+
+
+⚡ EXECUTING SUBTASK 1: Define the objectives and scope of the data science project. Identify the problem to be solved and the desired outcomes.
+  ✅ Subtask 1 completed
+
+⚡ EXECUTING SUBTASK 2: Identify and gather relevant data sources necessary for the project. Determine what data is needed and whether it is available.
+  🔧 Using tool: search_knowledge
+  📝 Arguments: {
+    "query": "common data sources for data science projects and their availability"
+}
+  ✅ Result: {"found": true, "topic": "ai", "info": "Artificial Intelligence (AI) involves creating systems that can perform tasks requiring human intelligence, such as learning, reasoning, and problem-solving."}
+  ✅ Subtask 2 completed
+
+⚡ EXECUTING SUBTASK 3: Perform preliminary data exploration and cleaning to ensure data quality. This involves checking for missing values, outliers, and inconsistencies.
+  ✅ Subtask 3 completed
+
+⚡ EXECUTING SUBTASK 4: Select appropriate data analysis methods and algorithms based on project objectives. Consider techniques such as statistical analysis, machine learning, etc.
+  ✅ Subtask 4 completed
+
+⚡ EXECUTING SUBTASK 5: Develop a plan for model training, validation, and testing. Outline how the model's performance will be evaluated and improved iteratively.
+  ✅ Subtask 5 completed
+
+⚡ EXECUTING SUBTASK 6: Plan for deployment and continuous monitoring of the model in a real-world setting. Consider infrastructure requirements and how results will be communicated to stakeholders.
+  ✅ Subtask 6 completed
+
+======================================================================
+SYNTHESIS PHASE
+======================================================================
+
+
+🔄 SYNTHESIZING FINAL ANSWER...
+✅ Final answer synthesized
+
+======================================================================
+✅ TASK DECOMPOSITION COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: To successfully plan and execute a data science project, follow this comprehensive and systematic approach:
+
+### 1. Define Objectives and Scope
+
+- **Problem Identification**: Understand the business context and identify specific issues impacting the process. Engage stakeholders to gather insights.
+
+- **Objectives**: Develop a clear problem statement, set data-driven goals, and establish success criteria with quantifiable metrics.
+
+- **Scope**: Determine data availability, necessary tools, and project boundaries to prevent scope creep.
+
+- **Desired Outcomes**: Focus on business impact, efficiency gains, and potential innovations.
+
+### 2. Identify and Gather Data
+
+- **Data Requirements**: Identify the necessary data sources and ensure their availability and accessibility.
+  
+### 3. Data Exploration and Cleaning
+
+- **Data Exploration**: Load the data, explore its structure, and identify missing values, outliers, and inconsistencies.
+
+- **Data Cleaning**: Use techniques like filling or dropping missing values, capping outliers, and correcting inconsistencies.
+
+### 4. Select Data Analysis Methods
+
+- **Analysis Techniques**: Based on objectives, select methods like statistical analysis, machine learning, or deep learning.
+
+- **Tools**: Use software and libraries such as Python, `pandas`, `scikit-learn`, and visualization tools for analysis.
+
+### 5. Model Training, Validation, and Testing
+
+- **Data Splitting**: Allocate data for training, validation, and testing (e.g., 70/15/15 split).
+
+- **Training and Validation**: Choose algorithms, perform feature engineering, and use techniques like cross-validation for hyperparameter tuning.
+
+- **Testing and Evaluation**: Test the final model on a test set using metrics like accuracy, precision, or RMSE. Compare with a baseline model.
+
+- **Iterative Improvement**: Conduct error analysis, refine features, and implement a feedback loop for continuous model enhancement.
+
+### 6. Deployment and Monitoring
+
+- **Infrastructure**: Utilize cloud services for deployment and adopt CI/CD pipelines for systematic updates.
+
+- **Monitoring**: Use tools for performance tracking, error detection, and model drift identification.
+
+- **Feedback Loop**: Regularly retrain the model with new data and gather user feedback for improvements.
+
+### 7. Communication
+
+- **Stakeholder Engagement**: Prepare regular updates using dashboards and reports to communicate model performance and insights.
+
+- **Actionable Insights**: Present model outputs as understandable results for decision-makers, ensuring transparency throughout the project lifecycle.
+
+By following these steps, your data science project will be well-organized, with clear objectives, robust analysis, and effective deployment, ensuring alignment with business goals and stakeholder expectations.
+Number of Subtasks: 6
+
+📍 Task decomposition breakdown:
+  1. Define the objectives and scope of the data science project. Identify the problem to be solved and the desired outcomes.
+  2. Identify and gather relevant data sources necessary for the project. Determine what data is needed and whether it is available.
+  3. Perform preliminary data exploration and cleaning to ensure data quality. This involves checking for missing values, outliers, and inconsistencies.
+  4. Select appropriate data analysis methods and algorithms based on project objectives. Consider techniques such as statistical analysis, machine learning, etc.
+  5. Develop a plan for model training, validation, and testing. Outline how the model's performance will be evaluated and improved iteratively.
+  6. Plan for deployment and continuous monitoring of the model in a real-world setting. Consider infrastructure requirements and how results will be communicated to stakeholders.
