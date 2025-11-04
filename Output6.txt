@@ -1,0 +1,283 @@
+
+======================================================================
+CHAIN OF THOUGHT AGENT WITH RESPONSES API
+======================================================================
+
+======================================================================
+EXAMPLE 1: Multi-step mathematical problem with Chain of Thought
+======================================================================
+
+======================================================================
+USER QUERY: If I have 15 apples and I buy 3 more bags with 8 apples each, then give away half of my apples, how many do I have left?
+======================================================================
+
+
+🧠 APPLYING CHAIN OF THOUGHT REASONING...
+
+  📍 Step 1: Using tool 'calculator'
+     Arguments: {
+    "expression": "3 * 8"
+}
+     Result: {"success": true, "result": 24, "expression": "3 * 8"}
+
+✅ Chain of Thought reasoning completed with 1 tool calls
+
+======================================================================
+✅ CHAIN OF THOUGHT REASONING COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: Let's solve this problem step by step:
+
+### Step 1: Identify the initial number of apples.
+- You start with 15 apples.
+
+### Step 2: Calculate the total number of apples after buying more.
+- You buy 3 bags, each containing 8 apples.
+- To find the total number of apples from the bags, multiply the number of bags by the number of apples per bag: \( 3 \times 8 \).
+
+Let's calculate that using a tool.
+Number of Reasoning Steps: 2
+Tool Calls Made: 1
+
+======================================================================
+COMPLETE CHAIN OF THOUGHT REASONING TRACE
+======================================================================
+
+🧠 Total Reasoning Steps: 2
+
+Step 1: Tool Call - calculator
+  Arguments: {
+  "expression": "3 * 8"
+}
+  Result: {"success": true, "result": 24, "expression": "3 * 8"}
+
+Reasoning Output:
+  Let's solve this problem step by step:
+
+### Step 1: Identify the initial number of apples.
+- You start with 15 apples.
+
+### Step 2: Calculate the total number of apples after buying more.
+- You buy 3 bags, each containing 8 apples.
+- To find the total number of apples from the bags, multiply the number of bags by the number of apples per bag: \( 3 \times 8 \).
+
+Let's calculate that using a tool.
+
+
+======================================================================
+EXAMPLE 2: Multi-tool information gathering with Chain of Thought
+======================================================================
+
+======================================================================
+USER QUERY: What is Python programming language? What's today's date? Then tell me: was Python created more than 30 years ago from today?
+======================================================================
+
+
+🧠 APPLYING CHAIN OF THOUGHT REASONING...
+
+  📍 Step 1: Using tool 'search_knowledge'
+     Arguments: {
+    "query": "Python programming language"
+}
+     Result: {"found": true, "topic": "python", "info": "Python is a high-level programming language created by Guido van Rossum, first released in 1991. Known for its readability and versatility."}
+
+  📍 Step 2: Using tool 'get_current_date'
+     Arguments: {}
+     Result: {"date": "2025-11-04", "time": "16:07:42", "full_datetime": "2025-11-04 16:07:42", "year": 2025}
+
+✅ Chain of Thought reasoning completed with 2 tool calls
+
+======================================================================
+✅ CHAIN OF THOUGHT REASONING COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: Let's think through this step by step:
+
+### Step 1: Identify What We Need to Find
+1. **Define Python Programming Language.**
+2. **Determine Today's Date.**
+3. **Calculate if Python Was Created More Than 30 Years Ago From Today.**
+
+### Step 2: Gather Necessary Information
+1. **Define Python Programming Language:**
+   - I'll search for information about Python's definition and creation date.
+   
+2. **Determine Today's Date:**
+   - I'll use a tool to get the current date.
+
+### Step 3: Perform Searches and Calculations
+Let's execute the searches and get the current date in parallel.
+
+1. **Search for Python Programming Language Information.**
+2. **Get Today's Date.**
+
+I'll perform these operations now.
+Number of Reasoning Steps: 3
+Tool Calls Made: 2
+
+======================================================================
+COMPLETE CHAIN OF THOUGHT REASONING TRACE
+======================================================================
+
+🧠 Total Reasoning Steps: 3
+
+Step 1: Tool Call - search_knowledge
+  Arguments: {
+  "query": "Python programming language"
+}
+  Result: {"found": true, "topic": "python", "info": "Python is a high-level programming language created by Guido van Rossum, first released in 1991. Known for its readability and versatility."}
+
+Step 2: Tool Call - get_current_date
+  Arguments: {}
+  Result: {"date": "2025-11-04", "time": "16:07:42", "full_datetime": "2025-11-04 16:07:42", "year": 2025}
+
+Reasoning Output:
+  Let's think through this step by step:
+
+### Step 1: Identify What We Need to Find
+1. **Define Python Programming Language.**
+2. **Determine Today's Date.**
+3. **Calculate if Python Was Created More Than 30 Years Ago From Today.**
+
+### Step 2: Gather Necessary Information
+1. **Define Python Programming Language:**
+   - I'll search for information about Python's definition and creation date.
+   
+2. **Determine Today's Date:**
+   - I'll use a tool to get the current date.
+
+### Step 3: Perform Searches and Calculations
+Let's execute the searches and get the current date in parallel.
+
+1. **Search for Python Programming Language Information.**
+2. **Get Today's Date.**
+
+I'll perform these operations now.
+
+
+======================================================================
+EXAMPLE 3: Complex problem with Chain of Thought reasoning
+======================================================================
+
+======================================================================
+USER QUERY: A store has a sale where everything is 20% off. If I buy a laptop for $800, a mouse for $25, and headphones for $75, what's my total after the discount? Also, if I pay with a $1000 bill, how much change do I get?
+======================================================================
+
+
+🧠 APPLYING CHAIN OF THOUGHT REASONING...
+
+  📍 Step 1: Using tool 'calculator'
+     Arguments: {
+    "expression": "800 * (1 - 20/100)"
+}
+     Result: {"success": true, "result": 640.0, "expression": "800 * (1 - 20/100)"}
+
+  📍 Step 2: Using tool 'calculator'
+     Arguments: {
+    "expression": "25 * (1 - 20/100)"
+}
+     Result: {"success": true, "result": 20.0, "expression": "25 * (1 - 20/100)"}
+
+  📍 Step 3: Using tool 'calculator'
+     Arguments: {
+    "expression": "75 * (1 - 20/100)"
+}
+     Result: {"success": true, "result": 60.0, "expression": "75 * (1 - 20/100)"}
+
+✅ Chain of Thought reasoning completed with 3 tool calls
+
+======================================================================
+✅ CHAIN OF THOUGHT REASONING COMPLETED
+======================================================================
+
+
+======================================================================
+📊 FINAL RESULT
+======================================================================
+Answer: Let's solve this problem step by step:
+
+### Step 1: Identify the Prices and Discount
+We have three items with the following prices:
+- Laptop: $800
+- Mouse: $25
+- Headphones: $75
+
+The discount on each item is 20%.
+
+### Step 2: Calculate the Discounted Prices
+To find the discounted price of each item, we need to calculate 20% off each original price.
+
+The formula to calculate the discounted price is:
+\[ \text{Discounted Price} = \text{Original Price} \times (1 - \frac{\text{Discount Percentage}}{100}) \]
+
+I'll calculate the discounted prices using this formula.
+
+### Step 3: Calculate the Total Discounted Price
+We will sum the discounted prices of all items to find the total amount spent after the discount.
+
+### Step 4: Calculate Change from a $1000 Bill
+Subtract the total discounted price from $1000 to find out how much change you would receive.
+
+Let's proceed with these calculations:
+Number of Reasoning Steps: 4
+Tool Calls Made: 3
+
+======================================================================
+COMPLETE CHAIN OF THOUGHT REASONING TRACE
+======================================================================
+
+🧠 Total Reasoning Steps: 4
+
+Step 1: Tool Call - calculator
+  Arguments: {
+  "expression": "800 * (1 - 20/100)"
+}
+  Result: {"success": true, "result": 640.0, "expression": "800 * (1 - 20/100)"}
+
+Step 2: Tool Call - calculator
+  Arguments: {
+  "expression": "25 * (1 - 20/100)"
+}
+  Result: {"success": true, "result": 20.0, "expression": "25 * (1 - 20/100)"}
+
+Step 3: Tool Call - calculator
+  Arguments: {
+  "expression": "75 * (1 - 20/100)"
+}
+  Result: {"success": true, "result": 60.0, "expression": "75 * (1 - 20/100)"}
+
+Reasoning Output:
+  Let's solve this problem step by step:
+
+### Step 1: Identify the Prices and Discount
+We have three items with the following prices:
+- Laptop: $800
+- Mouse: $25
+- Headphones: $75
+
+The discount on each item is 20%.
+
+### Step 2: Calculate the Discounted Prices
+To find the discounted price of each item, we need to calculate 20% off each original price.
+
+The formula to calculate the discounted price is:
+\[ \text{Discounted Price} = \text{Original Price} \times (1 - \frac{\text{Discount Percentage}}{100}) \]
+
+I'll calculate the discounted prices using this formula.
+
+### Step 3: Calculate the Total Discounted Price
+We will sum the discounted prices of all items to find the total amount spent after the discount.
+
+### Step 4: Calculate Change from a $1000 Bill
+Subtract the total discounted price from $1000 to find out how much change you would receive.
+
+Let's proceed with these calculations:
+

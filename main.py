@@ -7,19 +7,19 @@ from datetime import datetime
 # Initialize OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-class TaskDecompositionAgent:
+class ChainOfThoughtAgent:
     """
-    Task Decomposition Agent using OpenAI's Responses API.
-    This pattern breaks down complex problems into smaller, manageable subtasks,
-    executes them sequentially, and combines results to solve the original problem.
+    Chain of Thought Agent using OpenAI's Responses API.
+    This pattern encourages the model to reason step-by-step, showing its thinking process
+    before arriving at a final answer. It breaks down complex reasoning into explicit,
+    sequential steps that are visible to the user.
     The Responses API is stateful and handles conversation management automatically.
     """
 
-    def __init__(self, model: str = "gpt-4o", max_subtasks: int = 5):
+    def __init__(self, model: str = "gpt-4o"):
         self.model = model
-        self.max_subtasks = max_subtasks  # Maximum number of subtasks to decompose into
         self.memory: List[Dict[str, Any]] = []
-        self.task_plan: Dict[str, Any] = {}  # Store the complete task decomposition plan
+        self.reasoning_steps: List[Dict[str, Any]] = []  # Store the reasoning chain
         self.conversation_history: List[Dict[str, str]] = []
         self.response_id = None  # Track previous response for conversation continuity
 
@@ -119,226 +119,119 @@ class TaskDecompositionAgent:
 
         return json.dumps({"error": "Tool not found"})
 
-    def get_system_instructions(self, mode: str = "decompose") -> str:
-        """System instructions that implement the Task Decomposition pattern"""
-        if mode == "decompose":
-            return f"""You are a helpful AI agent that uses Task Decomposition to solve complex problems.
+    def get_system_instructions(self) -> str:
+        """System instructions that implement the Chain of Thought pattern"""
+        return """You are a helpful AI agent that uses Chain of Thought reasoning to solve problems.
 
-Your task is to break down the given problem into a sequence of {self.max_subtasks} or fewer subtasks.
-Each subtask should be:
-1. Clear and specific
-2. Achievable with available tools or reasoning
-3. Build upon previous subtasks sequentially
+When given a problem or question, you should:
 
-Format your response as a JSON object:
-{{
-  "analysis": "Brief analysis of the problem",
-  "subtasks": [
-    {{
-      "id": 1,
-      "description": "Clear description of the subtask",
-      "tool_needed": "calculator|search_knowledge|get_current_date|reasoning",
-      "depends_on": []
-    }},
-    {{
-      "id": 2,
-      "description": "Next subtask",
-      "tool_needed": "calculator",
-      "depends_on": [1]
-    }}
-  ],
-  "final_step": "How to combine results to answer the original question"
-}}
+1. Think step-by-step, showing your reasoning process explicitly
+2. Break down complex problems into clear, logical steps
+3. Use available tools when needed for calculations, information lookup, or getting current data
+4. Show intermediate results and how they lead to the next step
+5. Explain your thought process as you work through the problem
+6. Arrive at a final answer based on your step-by-step reasoning
 
-Be logical and efficient in your decomposition."""
+Format your response to clearly show:
+- Each step of your reasoning (numbered or clearly marked)
+- What you're thinking at each step
+- When and why you're using tools
+- How intermediate results connect to the final answer
 
-        elif mode == "execute":
-            return """You are a helpful AI agent executing a specific subtask.
+Example structure:
+"Let me think through this step by step:
 
-Use the available tools to complete the subtask.
-Provide clear output about what you've done and what result you obtained.
-If the subtask requires reasoning without tools, provide your analysis."""
+Step 1: [Identify what we need to find]
+Step 2: [Gather necessary information using tools if needed]
+Step 3: [Perform calculations or analysis]
+Step 4: [Draw conclusions from the results]
 
-        else:  # synthesize mode
-            return """You are a helpful AI agent synthesizing results from multiple subtasks.
+Therefore, the final answer is..."
 
-Review the completed subtasks and their results.
-Combine them to provide a comprehensive final answer to the original question.
-Ensure your answer is clear, complete, and addresses all aspects of the question."""
+Be clear, logical, and thorough in your reasoning. Show your work!"""
 
-    def decompose_task(self, user_query: str) -> Dict[str, Any]:
-        """Decompose the user's query into subtasks"""
-        print(f"\n📋 DECOMPOSING TASK INTO SUBTASKS...")
+    def process_with_chain_of_thought(self, user_query: str) -> Dict[str, Any]:
+        """
+        Process the query using Chain of Thought reasoning.
+        The agent will think step-by-step and use tools as needed.
+        """
+        print(f"\n🧠 APPLYING CHAIN OF THOUGHT REASONING...")
 
-        prompt = f"""Problem to solve: {user_query}
+        prompt = f"""Let's solve this problem step by step: {user_query}
 
-Break this problem down into a sequence of subtasks that can be executed step by step.
-Consider what information is needed and in what order."""
+Think through this carefully, showing your reasoning at each step. Use the available tools when you need to calculate, search for information, or get the current date."""
 
         try:
             response = client.responses.create(
                 model=self.model,
                 input=prompt,
-                instructions=self.get_system_instructions(mode="decompose"),
+                instructions=self.get_system_instructions(),
                 tools=self.get_tools_config()
             )
 
-            # Extract the response text
-            response_text = ""
-            for item in response.output:
-                if item.type == "message":
-                    for content_item in item.content:
-                        if hasattr(content_item, 'text'):
-                            response_text += content_item.text
+            reasoning_output = ""
+            tool_calls_made = []
+            step_number = 0
 
-            # Try to parse JSON from response
-            import re
-            json_match = re.search(r'\{[\s\S]*\}', response_text)
-            if json_match:
-                task_plan = json.loads(json_match.group())
-                print(f"✅ Decomposed into {len(task_plan.get('subtasks', []))} subtasks")
-                print(f"\n📊 Analysis: {task_plan.get('analysis', 'N/A')}")
-
-                for subtask in task_plan.get('subtasks', []):
-                    print(f"\n  Subtask {subtask.get('id')}:")
-                    print(f"    - Description: {subtask.get('description')}")
-                    print(f"    - Tool needed: {subtask.get('tool_needed', 'N/A')}")
-                    print(f"    - Depends on: {subtask.get('depends_on', [])}")
-
-                print(f"\n  Final step: {task_plan.get('final_step', 'N/A')}")
-                return task_plan
-            else:
-                print("⚠️ Could not parse JSON, using fallback")
-                return {
-                    "analysis": "Could not decompose properly",
-                    "subtasks": [{
-                        "id": 1,
-                        "description": user_query,
-                        "tool_needed": "reasoning",
-                        "depends_on": []
-                    }],
-                    "final_step": "Provide direct answer"
-                }
-
-        except Exception as e:
-            print(f"❌ Error decomposing task: {e}")
-            return {
-                "analysis": f"Error: {e}",
-                "subtasks": [],
-                "final_step": "Error occurred"
-            }
-
-    def execute_subtask(self, subtask: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a single subtask"""
-        subtask_id = subtask.get('id', 0)
-        description = subtask.get('description', '')
-        tool_needed = subtask.get('tool_needed', 'reasoning')
-
-        print(f"\n⚡ EXECUTING SUBTASK {subtask_id}: {description}")
-
-        # Build context from previous subtasks
-        context_str = "Previous results:\n"
-        for prev_id, prev_result in context.items():
-            context_str += f"Subtask {prev_id}: {prev_result.get('output', 'N/A')}\n"
-
-        prompt = f"""Execute this subtask: {description}
-
-{context_str}
-
-Use the appropriate tool or provide reasoning to complete this subtask."""
-
-        try:
-            response = client.responses.create(
-                model=self.model,
-                input=prompt,
-                instructions=self.get_system_instructions(mode="execute"),
-                tools=self.get_tools_config()
-            )
-
-            result = {
-                "subtask_id": subtask_id,
-                "description": description,
-                "output": "",
-                "tool_used": None,
-                "tool_result": None
-            }
-
-            # Process response - look for tool calls and text
+            # Process the response - may include multiple tool calls and reasoning
             for item in response.output:
                 if item.type == "function_call":
+                    step_number += 1
                     tool_name = item.name
                     tool_args = json.loads(item.arguments)
-                    print(f"  🔧 Using tool: {tool_name}")
-                    print(f"  📝 Arguments: {json.dumps(tool_args, indent=4)}")
+
+                    print(f"\n  📍 Step {step_number}: Using tool '{tool_name}'")
+                    print(f"     Arguments: {json.dumps(tool_args, indent=4)}")
 
                     tool_result = self.execute_tool(tool_name, tool_args)
-                    print(f"  ✅ Result: {tool_result}")
+                    print(f"     Result: {tool_result}")
 
-                    result["tool_used"] = tool_name
-                    result["tool_result"] = tool_result
-                    result["output"] = tool_result
+                    tool_calls_made.append({
+                        "step": step_number,
+                        "tool": tool_name,
+                        "arguments": tool_args,
+                        "result": tool_result
+                    })
+
+                    self.reasoning_steps.append({
+                        "type": "tool_call",
+                        "step": step_number,
+                        "tool": tool_name,
+                        "arguments": tool_args,
+                        "result": tool_result
+                    })
 
                 elif item.type == "message":
                     for content_item in item.content:
                         if hasattr(content_item, 'text'):
-                            result["output"] += content_item.text
+                            reasoning_output += content_item.text
 
-            if not result["output"]:
-                result["output"] = "No output generated"
+            # Store the reasoning text as well
+            if reasoning_output:
+                self.reasoning_steps.append({
+                    "type": "reasoning",
+                    "content": reasoning_output
+                })
 
-            print(f"  ✅ Subtask {subtask_id} completed")
-            return result
+            print(f"\n✅ Chain of Thought reasoning completed with {len(tool_calls_made)} tool calls")
+
+            return {
+                "reasoning": reasoning_output,
+                "tool_calls": tool_calls_made,
+                "steps": len(self.reasoning_steps)
+            }
 
         except Exception as e:
-            print(f"  ❌ Error executing subtask {subtask_id}: {e}")
+            print(f"❌ Error in Chain of Thought reasoning: {e}")
             return {
-                "subtask_id": subtask_id,
-                "description": description,
-                "output": f"Error: {e}",
+                "reasoning": f"Error occurred: {e}",
+                "tool_calls": [],
                 "error": str(e)
             }
 
-    def synthesize_results(self, user_query: str, task_plan: Dict[str, Any],
-                          results: List[Dict[str, Any]]) -> str:
-        """Synthesize all subtask results into a final answer"""
-        print(f"\n🔄 SYNTHESIZING FINAL ANSWER...")
-
-        results_str = json.dumps(results, indent=2)
-
-        prompt = f"""Original question: {user_query}
-
-Task decomposition plan:
-{json.dumps(task_plan, indent=2)}
-
-Completed subtasks and their results:
-{results_str}
-
-Based on all the subtask results, provide a comprehensive final answer to the original question."""
-
-        try:
-            response = client.responses.create(
-                model=self.model,
-                input=prompt,
-                instructions=self.get_system_instructions(mode="synthesize")
-            )
-
-            final_answer = ""
-            for item in response.output:
-                if item.type == "message":
-                    for content_item in item.content:
-                        if hasattr(content_item, 'text'):
-                            final_answer += content_item.text
-
-            print(f"✅ Final answer synthesized")
-            return final_answer
-
-        except Exception as e:
-            print(f"❌ Error synthesizing results: {e}")
-            return f"Error synthesizing results: {e}"
-
     def run(self, user_query: str, store_conversation: bool = False) -> Dict[str, Any]:
         """
-        Main Task Decomposition agent loop using Responses API.
+        Main Chain of Thought agent loop using Responses API.
 
         Args:
             user_query: The user's question or request
@@ -349,82 +242,62 @@ Based on all the subtask results, provide a comprehensive final answer to the or
         print(f"{'='*70}\n")
 
         try:
-            # Step 1: Decompose the task into subtasks
-            task_plan = self.decompose_task(user_query)
-            self.task_plan = task_plan
+            # Process the query with Chain of Thought reasoning
+            result = self.process_with_chain_of_thought(user_query)
 
-            if not task_plan.get('subtasks'):
+            if "error" in result:
                 return {
-                    "answer": "Could not decompose task into subtasks",
-                    "task_plan": task_plan,
-                    "results": [],
-                    "error": "No subtasks generated"
+                    "answer": result.get("reasoning", "Error occurred"),
+                    "reasoning_steps": self.reasoning_steps,
+                    "tool_calls": result.get("tool_calls", []),
+                    "error": result["error"]
                 }
 
-            # Step 2: Execute subtasks sequentially
             print(f"\n{'='*70}")
-            print(f"EXECUTING {len(task_plan['subtasks'])} SUBTASKS")
-            print(f"{'='*70}\n")
-
-            results = []
-            context = {}  # Store results of completed subtasks
-
-            for subtask in task_plan['subtasks']:
-                result = self.execute_subtask(subtask, context)
-                results.append(result)
-                context[subtask.get('id')] = result
-
-            # Step 3: Synthesize final answer
-            print(f"\n{'='*70}")
-            print("SYNTHESIS PHASE")
-            print(f"{'='*70}\n")
-
-            final_answer = self.synthesize_results(user_query, task_plan, results)
-
-            print(f"\n{'='*70}")
-            print("✅ TASK DECOMPOSITION COMPLETED")
+            print("✅ CHAIN OF THOUGHT REASONING COMPLETED")
             print(f"{'='*70}\n")
 
             return {
-                "answer": final_answer,
-                "task_plan": task_plan,
-                "results": results,
-                "num_subtasks": len(task_plan['subtasks'])
+                "answer": result["reasoning"],
+                "reasoning_steps": self.reasoning_steps,
+                "tool_calls": result["tool_calls"],
+                "num_steps": result["steps"]
             }
 
         except Exception as e:
-            print(f"\n❌ Error in task decomposition: {str(e)}")
+            print(f"\n❌ Error in Chain of Thought reasoning: {str(e)}")
             return {
                 "answer": f"Error occurred: {str(e)}",
-                "task_plan": self.task_plan,
-                "results": [],
+                "reasoning_steps": self.reasoning_steps,
+                "tool_calls": [],
                 "error": str(e)
             }
 
     def print_execution_trace(self):
-        """Pretty print the complete Task Decomposition trace"""
+        """Pretty print the complete Chain of Thought reasoning trace"""
         print(f"\n{'='*70}")
-        print("COMPLETE TASK DECOMPOSITION TRACE")
+        print("COMPLETE CHAIN OF THOUGHT REASONING TRACE")
         print(f"{'='*70}\n")
 
-        if not self.task_plan:
-            print("No task plan available")
+        if not self.reasoning_steps:
+            print("No reasoning steps available")
             return
 
-        print(f"📋 Task Plan Analysis: {self.task_plan.get('analysis', 'N/A')}\n")
+        print(f"🧠 Total Reasoning Steps: {len(self.reasoning_steps)}\n")
 
-        print(f"📝 Decomposed Subtasks ({len(self.task_plan.get('subtasks', []))}):")
-        for subtask in self.task_plan.get('subtasks', []):
-            print(f"\n  {subtask.get('id')}. {subtask.get('description')}")
-            print(f"     Tool needed: {subtask.get('tool_needed', 'N/A')}")
-            print(f"     Dependencies: {subtask.get('depends_on', [])}")
-
-        print(f"\n🎯 Final Step: {self.task_plan.get('final_step', 'N/A')}")
+        for i, step in enumerate(self.reasoning_steps, 1):
+            if step["type"] == "tool_call":
+                print(f"Step {step['step']}: Tool Call - {step['tool']}")
+                print(f"  Arguments: {json.dumps(step['arguments'], indent=2)}")
+                print(f"  Result: {step['result']}\n")
+            elif step["type"] == "reasoning":
+                print(f"Reasoning Output:")
+                print(f"  {step['content']}\n")
 
     def reset(self):
         """Reset conversation state"""
         self.memory = []
-        self.task_plan = {}
+        self.reasoning_steps = []
         self.conversation_history = []
         self.response_id = None
 
@@ -432,15 +305,15 @@ Based on all the subtask results, provide a comprehensive final answer to the or
 # Example usage
 def main():
     print("\n" + "="*70)
-    print("TASK DECOMPOSITION AGENT WITH RESPONSES API")
+    print("CHAIN OF THOUGHT AGENT WITH RESPONSES API")
     print("="*70)
 
     # Example 1: Multi-step reasoning with calculations
     print("\n" + "="*70)
-    print("EXAMPLE 1: Multi-step mathematical problem with Task Decomposition")
+    print("EXAMPLE 1: Multi-step mathematical problem with Chain of Thought")
     print("="*70)
 
-    agent = TaskDecompositionAgent(model="gpt-4o", max_subtasks=5)
+    agent = ChainOfThoughtAgent(model="gpt-4o")
 
     result = agent.run(
         "If I have 15 apples and I buy 3 more bags with 8 apples each, "
@@ -452,16 +325,17 @@ def main():
     print("📊 FINAL RESULT")
     print(f"{'='*70}")
     print(f"Answer: {result['answer']}")
-    print(f"Number of Subtasks: {result.get('num_subtasks', 'N/A')}")
+    print(f"Number of Reasoning Steps: {result.get('num_steps', 'N/A')}")
+    print(f"Tool Calls Made: {len(result.get('tool_calls', []))}")
 
     agent.print_execution_trace()
 
     # Example 2: Information gathering with multiple tools
     print("\n" + "="*70)
-    print("EXAMPLE 2: Multi-tool information gathering with Task Decomposition")
+    print("EXAMPLE 2: Multi-tool information gathering with Chain of Thought")
     print("="*70)
 
-    agent2 = TaskDecompositionAgent(model="gpt-4o", max_subtasks=5)
+    agent2 = ChainOfThoughtAgent(model="gpt-4o")
 
     result2 = agent2.run(
         "What is Python programming language? What's today's date? "
@@ -473,20 +347,22 @@ def main():
     print("📊 FINAL RESULT")
     print(f"{'='*70}")
     print(f"Answer: {result2['answer']}")
-    print(f"Number of Subtasks: {result2.get('num_subtasks', 'N/A')}")
+    print(f"Number of Reasoning Steps: {result2.get('num_steps', 'N/A')}")
+    print(f"Tool Calls Made: {len(result2.get('tool_calls', []))}")
 
     agent2.print_execution_trace()
 
-    # Example 3: Complex problem requiring systematic breakdown
+    # Example 3: Complex problem requiring step-by-step reasoning
     print("\n" + "="*70)
-    print("EXAMPLE 3: Complex problem with systematic task breakdown")
+    print("EXAMPLE 3: Complex problem with Chain of Thought reasoning")
     print("="*70)
 
-    agent3 = TaskDecompositionAgent(model="gpt-4o", max_subtasks=6)
+    agent3 = ChainOfThoughtAgent(model="gpt-4o")
 
     result3 = agent3.run(
-        "I need to plan a data science project. What are the key steps? "
-        "Break it down systematically and provide a comprehensive plan.",
+        "A store has a sale where everything is 20% off. If I buy a laptop for $800, "
+        "a mouse for $25, and headphones for $75, what's my total after the discount? "
+        "Also, if I pay with a $1000 bill, how much change do I get?",
         store_conversation=True
     )
 
@@ -494,13 +370,11 @@ def main():
     print("📊 FINAL RESULT")
     print(f"{'='*70}")
     print(f"Answer: {result3['answer']}")
-    print(f"Number of Subtasks: {result3.get('num_subtasks', 'N/A')}")
+    print(f"Number of Reasoning Steps: {result3.get('num_steps', 'N/A')}")
+    print(f"Tool Calls Made: {len(result3.get('tool_calls', []))}")
 
-    # Show task plan
-    if 'task_plan' in result3 and 'subtasks' in result3['task_plan']:
-        print(f"\n📍 Task decomposition breakdown:")
-        for subtask in result3['task_plan']['subtasks']:
-            print(f"  {subtask.get('id')}. {subtask.get('description')}")
+    # Show reasoning trace
+    agent3.print_execution_trace()
 
 
 if __name__ == "__main__":
