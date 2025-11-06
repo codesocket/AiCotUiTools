@@ -1,6 +1,6 @@
 # ⚡ Quick Start Guide
 
-Get the LLM Agent UI running in **3 simple steps**!
+Get the LLM Agent UI running in **2 simple steps**!
 
 ## Step 1: Set Your OpenAI API Key
 
@@ -10,36 +10,26 @@ export OPENAI_API_KEY="sk-your-api-key-here"
 
 💡 **Tip**: Add this to your `~/.bashrc` or `~/.zshrc` to make it permanent.
 
-## Step 2: Start the Backend
+## Step 2: Run the Application
 
-Open a terminal and run:
+From the **project root** directory:
 
 ```bash
-cd webapp
-./start-backend.sh
+# Install dependencies (first time only)
+bun run install:all
+
+# Run both frontend and backend
+bun run dev
 ```
 
 You should see:
 ```
-✅ Starting FastAPI server on http://localhost:8000
-📡 WebSocket endpoint: ws://localhost:8000/ws/{client_id}
+[0] INFO: Uvicorn running on http://0.0.0.0:8000
+[1] VITE ready in xxx ms
+[1] ➜ Local: http://localhost:5173/
 ```
 
-## Step 3: Start the Frontend
-
-Open a **new terminal** and run:
-
-```bash
-cd webapp
-./start-frontend.sh
-```
-
-You should see:
-```
-✅ Starting Vite development server on http://localhost:5173
-```
-
-## Step 4: Open Your Browser
+## Step 3: Open Your Browser
 
 Navigate to: **http://localhost:5173**
 
@@ -69,24 +59,47 @@ Try these prompts to see the magic:
 
 ## 🐛 Troubleshooting
 
-### Backend won't start?
+### API Key Issues?
 - **Check API Key**: `echo $OPENAI_API_KEY`
-- **Install dependencies**: `cd webapp/backend && pip install -r requirements.txt`
+- Make sure it starts with `sk-`
 
-### Frontend won't start?
-- **Install dependencies**: `cd webapp/frontend && npm install`
-- **Check Node version**: `node --version` (should be 18+)
+### Port Already in Use?
+- **Backend (8000)**: `lsof -ti:8000 | xargs kill -9`
+- **Frontend (5173)**: `lsof -ti:5173 | xargs kill -9`
+
+### Dependencies Not Installed?
+```bash
+# Install backend dependencies (UV)
+bun run install:backend
+
+# Install frontend dependencies (Bun)
+bun run install:frontend
+```
 
 ### Can't connect?
 - Make sure **both** backend and frontend are running
 - Backend must be on port **8000**
 - Frontend must be on port **5173**
+- Check that no firewall is blocking the ports
+
+## 💻 Alternative Commands
+
+Run services individually:
+```bash
+# Backend only
+bun run dev:backend
+
+# Frontend only
+bun run dev:frontend
+```
 
 ## 📚 Next Steps
 
 - Read [README.md](README.md) for detailed architecture
-- Explore the code in `webapp/backend/server.py`
-- Check out the React components in `webapp/frontend/src/`
+- Explore the code in `backend/server.py` and `backend/enhanced_agent.py`
+- Check out the React components in `frontend/src/`
+- Review [ARCHITECTURE.md](ARCHITECTURE.md) for system design
+- See [EXAMPLES.md](EXAMPLES.md) for more usage patterns
 
 ---
 
