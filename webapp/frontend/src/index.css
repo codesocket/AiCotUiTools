@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800 rounded;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 dark:bg-gray-600 rounded;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500 dark:bg-gray-500;
+  }
+
+  /* High contrast mode styles */
+  .high-contrast {
+    --tw-bg-opacity: 1 !important;
+    --tw-text-opacity: 1 !important;
+  }
+
+  .high-contrast .bg-white {
+    @apply bg-black text-white;
+  }
+
+  .high-contrast .bg-gray-50 {
+    @apply bg-gray-900 text-white;
+  }
+
+  .high-contrast .bg-gray-100 {
+    @apply bg-gray-900 text-white;
+  }
+
+  .high-contrast .text-gray-600 {
+    @apply text-gray-100;
+  }
+
+  .high-contrast .text-gray-700 {
+    @apply text-white;
+  }
+
+  .high-contrast .text-gray-800 {
+    @apply text-white;
+  }
+
+  .high-contrast .text-gray-900 {
+    @apply text-white;
+  }
+
+  .high-contrast .border-gray-200 {
+    @apply border-white border-2;
+  }
+
+  .high-contrast .border-gray-300 {
+    @apply border-white border-2;
+  }
+
+  /* Gradient animation */
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 3s ease infinite;
+  }
+}

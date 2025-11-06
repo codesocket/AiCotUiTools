@@ -1,0 +1,17 @@
+{
+  "name": "aicot-ui-tools",
+  "version": "1.0.0",
+  "description": "AI Chain of Thought UI Tools - Full Stack Application",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd webapp/backend && uv run uvicorn server:app --reload --host 0.0.0.0 --port 8000",
+    "dev:frontend": "cd webapp/frontend && bun run dev",
+    "install:backend": "cd webapp/backend && uv sync",
+    "install:frontend": "cd webapp/frontend && bun install",
+    "install:all": "npm run install:backend && npm run install:frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
